@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>造物群岛 · 每个孩子都是一座岛</title>
+  <style>
+    /* 防首帧闪色：底色 = 泻湖海色 */
+    html, body { margin: 0; padding: 0; background: #1a9db4; }
+    #loading {
+      position: fixed; inset: 0; z-index: 99;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: linear-gradient(180deg, #2f97e6 0%, #a5e8ec 55%, #2fd0cf 100%);
+      color: #ffffff; font-family: "Songti SC", "Noto Serif SC", serif;
+      transition: opacity 0.9s ease; letter-spacing: 0.35em;
+      text-shadow: 0 2px 10px rgba(20, 80, 100, 0.4);
+    }
+    #loading .boat { font-size: 42px; animation: bob 2.4s ease-in-out infinite; letter-spacing: 0; }
+    #loading p { font-size: 15px; margin-top: 18px; opacity: 0.85; }
+    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="boat">⛵</div>
+    <p>正在扬帆……</p>
+  </div>
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

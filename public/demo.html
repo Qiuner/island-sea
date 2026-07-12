@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>作品占位</title>
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    color: #fff; text-align: center; overflow: hidden;
+  }
+  .emoji { font-size: 96px; animation: bob 2.6s ease-in-out infinite; }
+  h1 { font-family: "Songti SC", "Noto Serif SC", serif; font-size: 34px; letter-spacing: 0.2em; margin: 24px 0 8px; }
+  p { opacity: 0.8; font-size: 14px; letter-spacing: 0.1em; }
+  @keyframes bob { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-16px) scale(1.05); } }
+</style>
+</head>
+<body>
+  <div class="emoji" id="emoji">🎁</div>
+  <h1 id="title">作品占位</h1>
+  <p>这里将嵌入孩子部署上线的真实作品（网站 / 网页游戏）</p>
+  <script>
+    const q = new URLSearchParams(location.search)
+    const hue = Number(q.get('hue') ?? 210)
+    document.body.style.background =
+      `radial-gradient(ellipse at 50% 30%, hsl(${hue}, 55%, 38%), hsl(${(hue + 40) % 360}, 60%, 16%))`
+    document.getElementById('title').textContent = q.get('title') ?? '作品占位'
+    document.getElementById('emoji').textContent = q.get('emoji') ?? '🎁'
+    document.title = (q.get('title') ?? '作品占位') + ' · 占位页'
+  </script>
+</body>
+</html>

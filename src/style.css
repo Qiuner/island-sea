@@ -1,0 +1,186 @@
+:root {
+  --ink: #fdf3dd; /* 浮在场景上的文字（标题/提示）：浅色 + 阴影，压在亮海上也读得清 */
+  --ink2: #4a3a2b; /* 奶油卡片上的深色文字 */
+  --gold: #f4c561; /* 场景上的金（宝箱/强调） */
+  --gold2: #b9772a; /* 奶油卡片上的暖金（浅底上要更深才有对比） */
+  --glass: rgba(255, 250, 242, 0.84); /* 奶油毛玻璃卡面（云上小岛式） */
+  --glass-line: rgba(150, 110, 70, 0.22);
+  --serif: "Songti SC", "Noto Serif SC", "STSong", serif;
+  --sans: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; }
+body { font-family: var(--sans); color: var(--ink); }
+
+.stage { position: fixed; inset: 0; }
+.gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* ---------- HUD ---------- */
+.hud { position: absolute; inset: 0; pointer-events: none; }
+.hud-top {
+  position: absolute; top: 18px; left: 20px; right: 20px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+}
+.wordmark {
+  font-family: var(--serif); font-size: 20px; letter-spacing: 0.42em;
+  text-shadow: 0 2px 12px rgba(10, 20, 40, 0.7);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  transform: translateX(0.21em); /* 补字距造成的偏移 */
+}
+.wordmark span {
+  font-size: 11px; letter-spacing: 0.3em; opacity: 0.75; font-family: var(--sans);
+}
+.chip {
+  pointer-events: auto;
+  background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(12px) saturate(1.2); -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-radius: 999px; padding: 8px 16px; font-size: 13px; color: var(--ink2);
+  box-shadow: 0 6px 20px rgba(120, 90, 55, 0.22);
+}
+.chip b { color: var(--gold2); font-size: 15px; }
+.chip.btn { cursor: pointer; transition: border-color 0.2s, transform 0.15s; font-family: inherit; }
+.chip.btn:hover { border-color: var(--gold2); transform: translateY(-1px); }
+
+kbd {
+  display: inline-block; min-width: 16px; text-align: center;
+  padding: 1px 5px; margin: 0 2px; border-radius: 5px;
+  background: rgba(120, 85, 45, 0.1); border: 1px solid rgba(120, 85, 45, 0.24);
+  font-size: 11px; font-family: var(--sans); color: var(--ink2);
+}
+
+.hud-bottom {
+  position: absolute; bottom: 26px; left: 0; right: 0;
+  display: flex; justify-content: center;
+}
+.hint { font-size: 12.5px; opacity: 0.92; }
+
+.land-btn {
+  pointer-events: auto; cursor: pointer;
+  font-family: var(--serif); font-size: 19px; letter-spacing: 0.08em; color: #241708;
+  background: linear-gradient(180deg, #ffe1a0, #f2b556);
+  border: 1px solid #ffedc4; border-radius: 999px; padding: 13px 30px;
+  box-shadow: 0 6px 26px rgba(242, 181, 86, 0.45);
+  animation: landPulse 1.8s ease-in-out infinite;
+}
+.land-btn kbd { background: rgba(36, 23, 8, 0.12); border-color: rgba(36, 23, 8, 0.3); color: #241708; }
+@keyframes landPulse {
+  0%, 100% { transform: translateY(0); box-shadow: 0 6px 26px rgba(242, 181, 86, 0.45); }
+  50% { transform: translateY(-3px); box-shadow: 0 10px 34px rgba(242, 181, 86, 0.6); }
+}
+
+/* ---------- toast ---------- */
+.toast {
+  position: absolute; top: 84px; left: 50%; transform: translateX(-50%);
+  background: var(--glass); border: 1px solid var(--glass-line); color: var(--ink2);
+  backdrop-filter: blur(12px) saturate(1.2); -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border-radius: 14px; padding: 12px 22px; font-size: 14.5px;
+  max-width: min(560px, 86vw); text-align: center; line-height: 1.6;
+  box-shadow: 0 10px 30px rgba(120, 90, 55, 0.26);
+}
+.toast-enter-active { transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.toast-leave-active { transition: all 0.5s ease; }
+.toast-enter-from { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+.toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+
+/* ---------- 岛屿名录（按名字找岛） ---------- */
+.island-list { position: absolute; top: 64px; left: 20px; pointer-events: none; }
+.finder-btn { pointer-events: auto; }
+.list-panel {
+  pointer-events: auto; margin-top: 8px; width: 250px;
+  background: var(--glass); border: 1px solid var(--glass-line); color: var(--ink2);
+  backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border-radius: 16px; padding: 10px; box-shadow: 0 14px 40px rgba(120, 90, 55, 0.28);
+}
+.list-search {
+  width: 100%; box-sizing: border-box; border: 1px solid var(--glass-line);
+  background: rgba(120, 85, 45, 0.06); color: var(--ink2); border-radius: 10px;
+  padding: 8px 12px; font-size: 13.5px; font-family: var(--sans); outline: none;
+}
+.list-search::placeholder { color: rgba(74, 58, 43, 0.5); }
+.list-scroll { max-height: 300px; overflow-y: auto; margin-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.list-row {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  background: none; border: none; cursor: pointer; color: var(--ink2);
+  padding: 7px 8px; border-radius: 9px; font-family: inherit; font-size: 13.5px;
+  transition: background 0.15s;
+}
+.list-row:hover { background: rgba(185, 119, 42, 0.12); }
+.list-row.is-foggy { cursor: default; opacity: 0.5; }
+.list-row.is-foggy:hover { background: none; }
+.list-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.list-row .nm { font-weight: 600; }
+.list-row .by { opacity: 0.6; font-size: 12px; }
+.list-row .st { margin-left: auto; font-size: 11.5px; opacity: 0.65; color: var(--gold2); }
+.list-row.is-foggy .st { color: var(--ink2); }
+.empty { padding: 12px; text-align: center; font-size: 13px; opacity: 0.6; }
+
+/* ---------- 小地图 ---------- */
+.minimap {
+  position: absolute; right: 16px; bottom: 16px;
+  filter: drop-shadow(0 10px 22px rgba(120, 90, 55, 0.34));
+}
+.minimap canvas { display: block; cursor: pointer; }
+
+/* ---------- 登岛面板 ---------- */
+.island-panel {
+  position: absolute; left: 0; right: 0; bottom: 34px;
+  display: flex; justify-content: center; pointer-events: none;
+}
+.panel-card {
+  pointer-events: auto; color: var(--ink2);
+  background: var(--glass); border: 1px solid var(--glass-line);
+  backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+  border-radius: 20px; padding: 22px 30px 18px; min-width: 320px; max-width: 86vw;
+  text-align: center; box-shadow: 0 16px 44px rgba(120, 90, 55, 0.3);
+  animation: panelIn 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+@keyframes panelIn { from { opacity: 0; transform: translateY(22px); } }
+.panel-card .builder { margin: 0; font-size: 12.5px; letter-spacing: 0.2em; opacity: 0.7; }
+.panel-card h2 {
+  margin: 4px 0 16px; font-family: var(--serif); font-size: 30px;
+  letter-spacing: 0.24em; color: var(--gold2); font-weight: 600;
+  text-shadow: 0 2px 12px rgba(185, 119, 42, 0.22);
+}
+.panel-card .focus-hint { margin: 2px 0 16px; font-size: 13.5px; line-height: 1.6; opacity: 0.85; }
+.panel-card .focus-hint b { color: var(--gold2); font-weight: 600; }
+.projects { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.chest {
+  cursor: pointer; display: flex; align-items: center; gap: 12px;
+  background: rgba(120, 80, 40, 0.06); border: 1px solid var(--glass-line);
+  border-radius: 14px; padding: 12px 18px; color: var(--ink2); font-family: inherit;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+.chest:hover { border-color: var(--gold2); background: rgba(185, 119, 42, 0.12); transform: translateY(-2px); }
+.chest-icon { font-size: 24px; }
+.chest-name { font-size: 16px; flex: 1; text-align: left; }
+.chest-open { font-size: 12px; color: var(--gold2); letter-spacing: 0.12em; }
+.back {
+  cursor: pointer; background: none; border: none; color: var(--ink2);
+  opacity: 0.7; font-size: 13px; font-family: inherit; padding: 6px;
+}
+.back:hover { opacity: 1; }
+
+/* ---------- 项目详情 ---------- */
+.project-view {
+  position: fixed; inset: 0; z-index: 20; display: flex; flex-direction: column;
+  background: #0d1626;
+  animation: fadeIn 0.35s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } }
+.project-bar {
+  height: 52px; flex: none; display: flex; align-items: center; gap: 16px;
+  padding: 0 16px; background: rgba(14, 26, 46, 0.96);
+  border-bottom: 1px solid var(--glass-line);
+}
+.project-bar .title { flex: 1; text-align: center; font-size: 14.5px; }
+.project-bar .by { margin-left: 10px; font-size: 12px; opacity: 0.65; }
+.back-sea {
+  cursor: pointer; background: rgba(253, 243, 221, 0.1); color: var(--ink);
+  border: 1px solid var(--glass-line); border-radius: 999px; padding: 7px 16px;
+  font-size: 13px; font-family: inherit; transition: border-color 0.2s;
+}
+.back-sea:hover { border-color: var(--gold); }
+.open-new { color: var(--gold); font-size: 12.5px; text-decoration: none; opacity: 0.9; }
+.open-new:hover { opacity: 1; }
+.project-view iframe { flex: 1; width: 100%; border: none; background: #fff; }
