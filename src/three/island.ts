@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { IslandDef } from '../data/islands'
 import { mulberry32, hashString, hash3 } from './rng'
 import { glowTexture, fogTexture, labelTexture } from './sprites'
+import { easeOutCubic } from './ease'
 
 // 程序化 Madbox 风小岛：同一主题也有多种轮廓（圆丘/双丘/三层蛋糕/蘑菇石柱/雪塔…），
 // 形态由确定性种子决定——同一座岛永远长一个样，但整片海没有两座重样的岛。
@@ -20,7 +21,6 @@ let _fogTex: THREE.CanvasTexture | null = null
 function glowTex() { return (_glowTex ??= glowTexture('#ffffff')) }
 function fogTex() { return (_fogTex ??= fogTexture()) }
 
-const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 const easeOutBack = (t: number) => {
   const c = 1.70158
   return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2)
@@ -568,6 +568,13 @@ export class IslandObject {
         m.receiveShadow = true
       }
     })
+
+    // 迷雾岛预置"沉底+灰化"静息态：离屏门控可能从未 update 过它，
+    // 否则会以满色亮岛、未下沉、还带泡沫环的样子闯入画面（超宽视口下可见）。
+    if (this.def.projects.length === 0) {
+      this.applyMood(1, 0) // lastMoodK=1 → foamRadius 返回 0、颜色转灰、缩小
+      this.group.position.y = -3.2
+    }
   }
 
   /** 给水面 shader 用的泡沫半径：迷雾沉底时为 0（生长时泡沫随岛浮现） */

@@ -1,5 +1,9 @@
 import * as THREE from 'three'
-import { ISLANDS } from '../data/islands'
+
+// 浅滩/拍岸浪只对离船最近的 N 座“已浮现”的岛在片元里计算距离场：
+// 远岛在正交视野外或被 fog 柔化，看不到浅滩。CPU 每帧挑最近 N 座喂进定长 uniform，
+// 把片元里逐像素的 O(全岛数) 距离循环压成 O(N)（岛越多越省，随营期孩子增多不再线性变慢）。
+export const OCEAN_NEAR = 6
 
 // 冲奖版风格化水面（零后期、单 pass，片元 snoise ≤8 次/像素）：
 // 1) 顶点真实涌浪：两支长波（与 waves.ts 常数逐字同源，船的颠簸与海面同步）
@@ -33,17 +37,24 @@ const SNOISE = /* glsl */ `
   }
 `
 
-// 与 waves.ts 完全同源的两支涌浪（振幅 = steepness/k）
+// 与 waves.ts 完全同源的两支涌浪（振幅 = steepness/k；高度公式逐字不变，船的颠簸与海面仍同步）。
+// 解析法一次算出波高 + 梯度，取代原来 3 次 waveH 采样的有限差分法线（每顶点省 2/3 三角函数）。
 const WAVE_GLSL = /* glsl */ `
-  float waveH(vec2 p) {
-    return 0.39789 * sin(dot(vec2(0.95783, 0.28735), p) * 0.125664 - uTime * 1.10979)
-         + 0.17825 * sin(dot(vec2(0.57346, 0.81923), p) * 0.224399 - uTime * 1.48292);
+  // 返回 vec3(波高, ∂h/∂x, ∂h/∂z)
+  vec3 waveHN(vec2 p) {
+    vec2 d1 = vec2(0.95783, 0.28735); float f1 = 0.125664; float ph1 = dot(d1, p) * f1 - uTime * 1.10979;
+    vec2 d2 = vec2(0.57346, 0.81923); float f2 = 0.224399; float ph2 = dot(d2, p) * f2 - uTime * 1.48292;
+    float h  = 0.39789 * sin(ph1) + 0.17825 * sin(ph2);
+    float dx = 0.39789 * f1 * d1.x * cos(ph1) + 0.17825 * f2 * d2.x * cos(ph2);
+    float dz = 0.39789 * f1 * d1.y * cos(ph1) + 0.17825 * f2 * d2.y * cos(ph2);
+    return vec3(h, dx, dz);
   }
 `
 
 export function createOcean(): THREE.Mesh {
   // 开阔的海：一大张跟着船走的平面，始终铺满视野（远处靠 fog 柔成海天一色）。
-  const geo = new THREE.PlaneGeometry(1600, 1600, 480, 480)
+  // 256×256 细分：涌浪波长 50/28，此密度采样绰绰有余，视觉几乎无差，顶点数比 480² 降约 70%
+  const geo = new THREE.PlaneGeometry(1600, 1600, 256, 256)
   geo.rotateX(-Math.PI / 2)
 
   const mat = new THREE.ShaderMaterial({
@@ -60,8 +71,8 @@ export function createOcean(): THREE.Mesh {
         uSeaShallow: { value: new THREE.Color('#8ff0dc') }, // 岛周浅滩
         uSunDir: { value: new THREE.Vector3(0.45, 0.72, -0.52).normalize() },
         uSunColor: { value: new THREE.Color('#fff2cd') },
-        // [x, z, 泡沫半径]；半径 0 = 该岛沉在迷雾里（生长时浅滩与泡沫随岛浮现）
-        uIslands: { value: ISLANDS.map(() => new THREE.Vector3(0, 0, 0)) },
+        // [x, z, 泡沫半径]；只装离船最近的 OCEAN_NEAR 座（world 每帧筛选写入），半径 0 = 空槽/迷雾岛
+        uIslands: { value: Array.from({ length: OCEAN_NEAR }, () => new THREE.Vector3(0, 0, 0)) },
       },
     ]),
     vertexShader: /* glsl */ `
@@ -73,13 +84,9 @@ export function createOcean(): THREE.Mesh {
       void main() {
         vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
         vec2 p = wp.xz;
-        float h = waveH(p);
-        // 有限差分法线（涌浪很长，eps 取大些）
-        float e = 3.0;
-        float hx = waveH(p + vec2(e, 0.0));
-        float hz = waveH(p + vec2(0.0, e));
-        wp.y += h;
-        vNormal = normalize(vec3(h - hx, e, h - hz));
+        vec3 hn = waveHN(p); // (波高, ∂h/∂x, ∂h/∂z) 一次算出
+        wp.y += hn.x;
+        vNormal = normalize(vec3(-hn.y, 1.0, -hn.z));
         vWorldPos = wp;
         vec4 mvPosition = viewMatrix * vec4(wp, 1.0);
         gl_Position = projectionMatrix * mvPosition;
@@ -97,7 +104,7 @@ export function createOcean(): THREE.Mesh {
       uniform vec3 uSeaShallow;
       uniform vec3 uSunDir;
       uniform vec3 uSunColor;
-      uniform vec3 uIslands[${ISLANDS.length}];
+      uniform vec3 uIslands[${OCEAN_NEAR}];
       varying vec3 vWorldPos;
       varying vec3 vNormal;
       ${SNOISE}
@@ -114,7 +121,7 @@ export function createOcean(): THREE.Mesh {
 
         // ---- 到最近岛岸的距离场 ----
         float minD = 999.0;
-        for (int i = 0; i < ${ISLANDS.length}; i++) {
+        for (int i = 0; i < ${OCEAN_NEAR}; i++) {
           float r = uIslands[i].z;
           if (r < 0.5) continue;
           minD = min(minD, distance(p, uIslands[i].xy) - r);

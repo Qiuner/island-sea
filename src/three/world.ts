@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { ISLANDS, WORLD_RADIUS, SPAWN } from '../data/islands'
 import { store, statusOf, markVisited, islandById, showToast, detectGrowth, foundCount, discoverableCount } from '../store'
 import { createSky } from './sky'
-import { createOcean } from './ocean'
+import { createOcean, OCEAN_NEAR } from './ocean'
 import { IslandObject, type IslandStatus } from './island'
 import { Ship } from './ship'
 import { NIGHT } from './themes'
@@ -72,6 +72,7 @@ export class World {
   private postfx!: PostFX
   private sky = createSky()
   private ocean = createOcean()
+  private oceanNearD = new Float32Array(OCEAN_NEAR) // 每帧筛“离船最近 N 座岛”的距离平方，预分配免 GC
   private islands = new Map<string, IslandObject>()
   ship = new Ship()
   private sun = new THREE.DirectionalLight(NIGHT.sunColor, NIGHT.sunIntensity)
@@ -118,7 +119,10 @@ export class World {
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
     } catch (e) {
       const el = document.getElementById('loading')
-      if (el) el.innerHTML = '<p style="letter-spacing:0.1em">这台设备暂时打不开 3D 海洋，请换一台电脑试试 🥲</p>'
+      if (el) {
+        el.dataset.failed = '1' // 标记已给出精确文案，App.vue 的兜底不再覆盖
+        el.innerHTML = '<p style="letter-spacing:0.1em">这台设备暂时打不开 3D 海洋，请换一台电脑试试 🥲</p>'
+      }
       throw e
     }
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
@@ -683,11 +687,25 @@ export class World {
     }
     const oceanU = (this.ocean.material as THREE.ShaderMaterial).uniforms
     oceanU.uTime.value = sim
-    // 贴岸泡沫：把每座岛的实时泡沫半径喂给水面（迷雾=0，生长时随岛浮现）
+    // 贴岸泡沫/浅滩：只把离船最近的 OCEAN_NEAR 座“已浮现”的岛喂给水面
+    // （远岛在正交视野外或被 fog 柔化，看不到浅滩；片元循环因此从 O(全岛数) 压到 O(N)）。
     const islandVecs = oceanU.uIslands.value as THREE.Vector3[]
+    const oceanD = this.oceanNearD
+    for (let k = 0; k < OCEAN_NEAR; k++) { oceanD[k] = Infinity; islandVecs[k].set(0, 0, 0) }
+    const sx = this.ship.pos.x, sz = this.ship.pos.z
     for (let i = 0; i < ISLANDS.length; i++) {
       const def = ISLANDS[i]
-      islandVecs[i].set(def.position[0], def.position[1], this.islands.get(def.id)!.foamRadius)
+      const r = this.islands.get(def.id)!.foamRadius
+      if (r < 0.5) continue // 迷雾岛没有浅滩
+      const dx = def.position[0] - sx, dz = def.position[1] - sz
+      const d = dx * dx + dz * dz
+      // 保留最近 N：找当前最远的槽，比它近就替换（定长扫描，无排序、无分配）
+      let worst = 0
+      for (let k = 1; k < OCEAN_NEAR; k++) if (oceanD[k] > oceanD[worst]) worst = k
+      if (d < oceanD[worst]) {
+        oceanD[worst] = d
+        islandVecs[worst].set(def.position[0], def.position[1], r)
+      }
     }
     this.ocean.position.set(this.ship.pos.x, 0, this.ship.pos.z) // 海盘几何跟着船，始终铺满视野
 
