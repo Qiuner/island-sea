@@ -1,23 +1,28 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { createWorld } from './three/world'
+import { fetchPublishedIslands } from './api/islands'
 import Hud from './components/Hud.vue'
 import Minimap from './components/Minimap.vue'
 import IslandList from './components/IslandList.vue'
 import IslandPanel from './components/IslandPanel.vue'
-import { store } from './store'
+import { islandById, setIslands, store } from './store'
 
 const glCanvas = ref<HTMLCanvasElement | null>(null)
 const failed = ref(false)
-const router = useRouter()
+const empty = ref(false)
 
-onMounted(() => {
+onMounted(async () => {
   if (!glCanvas.value) return
   try {
-    const world = createWorld(glCanvas.value)
-    // 点击岛上宝箱 → 打开对应作品（world 不直接依赖 router，由这里注入）
-    world.onOpenProject = (islandId, projectId) => router.push(`/p/${islandId}/${projectId}`)
+    const islands = await fetchPublishedIslands()
+    setIslands(islands)
+    empty.value = islands.length === 0
+    const world = createWorld(glCanvas.value, islands)
+    world.onOpenProject = (islandId, projectId) => {
+      const project = islandById(islandId)?.projects.find(item => item.id === projectId)
+      if (project) window.open(project.url, '_blank', 'noopener,noreferrer')
+    }
   } catch (e) {
     failed.value = true
     // 兜底：#loading 遮罩在 #app 之外，只有首帧渲染成功才会淡出移除。
@@ -40,7 +45,7 @@ onMounted(() => {
       <IslandList v-if="store.mode !== 'landed'" />
       <Minimap />
       <IslandPanel v-if="store.mode === 'landed'" />
-      <router-view />
+      <div v-if="empty" class="empty-world">海面正在等待第一座岛</div>
     </template>
   </div>
 </template>

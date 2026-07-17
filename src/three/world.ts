@@ -1,20 +1,25 @@
 import * as THREE from 'three'
-import { ISLANDS, WORLD_RADIUS, SPAWN } from '../data/islands'
-import { store, statusOf, markVisited, islandById, showToast, detectGrowth, foundCount, discoverableCount } from '../store'
+import { WORLD_RADIUS, SPAWN, type IslandDef } from '../data/islands'
+import { store, statusOf, islandById, showToast, detectGrowth } from '../store'
 import { createSky } from './sky'
 import { createOcean, OCEAN_NEAR } from './ocean'
-import { IslandObject, type IslandStatus } from './island'
+import { IslandObject } from './island'
+import type { IslandStatus } from './island-types'
 import { Ship } from './ship'
 import { NIGHT } from './themes'
 import { ringTexture } from './sprites'
 import { mulberry32 } from './rng'
 import { createFireflies, createPlankton, createJellies } from './nightmagic'
 import { createSplash } from './shipfx'
-import { smoothstep, easeOutCubic, wrapAngle } from './ease'
-import { ISO_DIR, ISO_DIST, FRUSTUM, SHIP_SCALE } from './config'
+import { smoothstep, easeOutCubic } from './ease'
+import { FRUSTUM, SHIP_SCALE } from './config'
 import { CreatureManager } from './creatures'
 import { TimeOfDay } from './timeofday'
 import { PostFX } from './postfx'
+import { WorldControls } from './world-controls'
+import { WorldNavigation } from './world-navigation'
+import { updateSailing } from './world-sailing'
+import { WorldCameraRig } from './world-camera'
 
 // 世界主控：three 管 3D，Vue 管界面，两层只靠 store 和这里的公开方法对接。
 // 渲染路线（Bruno Simon / Madbox 式）：直渲无后期、Lambert 扁平材质、MSAA 抗锯齿——
@@ -66,6 +71,7 @@ class RingFX {
 }
 
 export class World {
+  private islandDefs: IslandDef[]
   renderer!: THREE.WebGLRenderer
   scene = new THREE.Scene()
   camera: THREE.OrthographicCamera
@@ -81,7 +87,7 @@ export class World {
   private clouds: THREE.Group[] = []
   private cloudMat!: THREE.MeshLambertMaterial
   private creatures!: CreatureManager
-  private fireflies = createFireflies()
+  private fireflies: ReturnType<typeof createFireflies>
   private plankton = createPlankton()
   private jellies = createJellies()
   private splash = createSplash()
@@ -90,30 +96,24 @@ export class World {
   private tod!: TimeOfDay // 全天时段系统（相位/主题/夜色/调色/缓动过渡/URL钩子）
   simTime = 0
   private paused = false
-  private keys = new Set<string>()
-  private camPos = new THREE.Vector3()
-  private camLook = new THREE.Vector3()
-  private camZoom = 1
   private landStart = 0
   private landBaseAngle = 0
-  private noDockUntil = -1
-  private autoLandAt = -1
-  private manualTargetId: string | null = null
-  private foggyToasted = new Set<string>()
   private growthQueue: string[] = []
   private nextGrowAt = 2.5
-  private raycaster = new THREE.Raycaster()
-  private pointerNdc = new THREE.Vector2()
-  private focusK = 0 // 聚焦程度（0 海面 .. 1 登岛特写）
-  /** 点击作品宝箱时由 App 注入（内含 vue-router 跳转） */
+  /** 点击作品宝箱时由 App 注入，默认在新窗口打开后台配置的作品链接 */
   onOpenProject: ((islandId: string, projectId: string) => void) | null = null
   private snapMode = false // ?snap：相机不做平滑过渡（机器截图定帧用）
   private bootDone = false
   private disposed = false
   private lastClock = performance.now()
+  private controls!: WorldControls
+  private navigation!: WorldNavigation
+  private cameraRig!: WorldCameraRig
   fps = 0
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, islandDefs: IslandDef[]) {
+    this.islandDefs = islandDefs
+    this.fireflies = createFireflies(islandDefs)
     try {
       // 直渲无后期 → MSAA 抗锯齿开着也便宜
       this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' })
@@ -154,6 +154,7 @@ export class World {
 
     // 后期管线（Bloom/移轴/OutputPass/调色）整体内聚到 PostFX
     this.postfx = new PostFX(this.renderer, this.scene, this.camera)
+    this.cameraRig = new WorldCameraRig(this.camera)
 
     this.scene.add(this.sky, this.ocean, this.ship.group, this.ship.wake, this.sun, this.fill, this.hemi)
     this.scene.add(this.fireflies.points, this.plankton.points, this.jellies.group) // 夜晚魔法
@@ -161,7 +162,7 @@ export class World {
     this.ship.group.scale.setScalar(SHIP_SCALE)
     this.sun.position.copy(NIGHT.sunDir).multiplyScalar(500)
 
-    for (const def of ISLANDS) {
+    for (const def of this.islandDefs) {
       const obj = new IslandObject(def)
       obj.group.userData.islandId = def.id // 供点击拾取识别是哪座岛
       this.islands.set(def.id, obj)
@@ -234,15 +235,14 @@ export class World {
 
     // 出生点与朝向
     this.ship.pos.set(SPAWN[0], 0, SPAWN[1])
-    this.camPos.set(SPAWN[0], 8, SPAWN[1] + 16)
-    this.camLook.set(SPAWN[0], 2, SPAWN[1] - 10)
+    this.cameraRig.seedSpawn(SPAWN[0], SPAWN[1])
 
     // ---- 验证钩子 ----
     if (q.has('t')) this.simTime = parseFloat(q.get('t')!) || 0
     this.tod = new TimeOfDay(q) // 时段钩子 ?tod / ?daycycle / ?theme 都在其构造里解析
     if (q.get('unlock') === 'all') {
       store.ephemeral = true
-      for (const isl of ISLANDS) if (isl.projects.length > 0) store.visited.add(isl.id)
+      for (const isl of this.islandDefs) if (isl.projects.length > 0) store.visited.add(isl.id)
     }
     const shipQ = q.get('ship')
     if (shipQ) {
@@ -260,6 +260,45 @@ export class World {
       this.growthQueue = detectGrowth()
       for (const id of this.growthQueue) store.pendingGrow.add(id)
     }
+    if (q.has('debug')) store.debug = true
+    this.snapMode = q.has('snap')
+    ;(window as any).__seek = (t: number) => (this.simTime = t)
+    ;(window as any).__world = this
+    ;(window as any).__store = store
+
+    // 相机初始就位（避免第一帧从原点飞过来）
+    this.cameraRig.snapToShip(this.ship.pos)
+
+    this.controls = new WorldControls({
+      canvas: this.renderer.domElement,
+      camera: this.camera,
+      getPaused: () => this.paused,
+      land: () => this.navigation.land(),
+      leave: () => this.navigation.leave(),
+      fastTravelTo: (id) => this.navigation.fastTravelTo(id),
+      findDockedChestHit: (raycaster) => {
+        if (!store.dockedId) return undefined
+        const obj = this.islands.get(store.dockedId)
+        return obj ? raycaster.intersectObjects(obj.chests, false)[0] : undefined
+      },
+      findIslandHit: (raycaster) => raycaster.intersectObjects([...this.islands.values()].map(o => o.group), true)[0],
+      resolveIslandId: (object) => object?.userData.islandId as string | undefined,
+      openProject: (projectId) => {
+        if (store.dockedId) this.onOpenProject?.(store.dockedId, projectId)
+      },
+    })
+    this.navigation = new WorldNavigation({
+      getSimTime: () => this.simTime,
+      clearControls: () => this.controls.clearKeys(),
+      getShipState: () => this.ship,
+      getIslandObject: (id) => this.islands.get(id),
+      spawnUnlockRing: (x, z, sim, color) => this.rings.spawn(x, z, sim, color),
+      setLandAnchor: (sim, baseAngle) => {
+        this.landStart = sim
+        this.landBaseAngle = baseAngle
+      },
+    })
+
     const islandQ = q.get('island')
     if (islandQ) {
       const def = islandById(islandQ)
@@ -269,24 +308,13 @@ export class World {
         const dir = new THREE.Vector3(SPAWN[0] - def.position[0], 0, SPAWN[1] - def.position[1]).normalize()
         this.ship.pos.set(def.position[0] + dir.x * (obj.radius + 6), 0, def.position[1] + dir.z * (obj.radius + 6))
         this.ship.heading = Math.atan2(-dir.x, -dir.z)
-        this.autoLandAt = this.simTime + 0.6
+        this.cameraRig.snapToShip(this.ship.pos)
+        this.navigation.queueAutoLandAt(this.simTime + 0.6)
       }
     }
-    if (q.has('debug')) store.debug = true
-    this.snapMode = q.has('snap')
-    ;(window as any).__seek = (t: number) => (this.simTime = t)
-    ;(window as any).__world = this
-    ;(window as any).__store = store
-
-    // 相机初始就位（避免第一帧从原点飞过来）
-    this.snapCamera()
 
     window.addEventListener('resize', this.updateSizes)
-    window.addEventListener('keydown', this.onKeyDown)
-    window.addEventListener('keyup', this.onKeyUp)
-    this.renderer.domElement.addEventListener('click', this.onCanvasClick)
-    window.addEventListener('blur', this.onBlur)
-    document.addEventListener('visibilitychange', this.onVisibility)
+    this.controls.attach()
 
     this.loop()
   }
@@ -306,88 +334,9 @@ export class World {
     this.postfx.setSize(w, h, Math.min(window.devicePixelRatio, 2))
   }
 
-  private onKeyDown = (e: KeyboardEvent): void => {
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault()
-    this.keys.add(e.key.toLowerCase())
-    if (this.paused) return // 项目 iframe 打开时不抢键盘
-    if (e.key === 'Enter' && store.mode === 'docked') this.land()
-    if (e.key === 'Escape' && store.mode === 'landed') this.leave()
-  }
-  private onKeyUp = (e: KeyboardEvent): void => {
-    this.keys.delete(e.key.toLowerCase())
-  }
-  // 失焦/切后台时清空按键：否则丢失的 keyup 会让 W/A/D 永久残留、回来船失控
-  private onBlur = (): void => this.keys.clear()
-  private onVisibility = (): void => {
-    if (document.hidden) this.keys.clear()
-  }
-
-  // 点击拾取：登岛特写时点宝箱开作品；泊岸时点岛屿即登岛（岛飘起来聚焦）
-  private onCanvasClick = (e: MouseEvent): void => {
-    if (this.paused) return
-    const rect = this.renderer.domElement.getBoundingClientRect()
-    this.pointerNdc.set(
-      ((e.clientX - rect.left) / rect.width) * 2 - 1,
-      -((e.clientY - rect.top) / rect.height) * 2 + 1,
-    )
-    this.raycaster.setFromCamera(this.pointerNdc, this.camera)
-    // 登岛特写：点作品宝箱 → 打开作品
-    if (store.mode === 'landed' && store.dockedId) {
-      const obj = this.islands.get(store.dockedId)
-      const hit = obj && this.raycaster.intersectObjects(obj.chests, false)[0]
-      if (hit) {
-        const pid = hit.object.userData.projectId as string | undefined
-        if (pid) this.onOpenProject?.(store.dockedId, pid)
-      }
-      return
-    }
-    // 海面：点岛 → 已泊在这座岛则登岛，否则快速跳转过去
-    const groups = [...this.islands.values()].map(o => o.group)
-    const hit = this.raycaster.intersectObjects(groups, true)[0]
-    if (!hit) return
-    let o: THREE.Object3D | null = hit.object
-    while (o && o.userData.islandId === undefined) o = o.parent
-    const id = o?.userData.islandId as string | undefined
-    if (!id) return
-    if (store.mode === 'docked' && store.dockedId === id) this.land()
-    else this.fastTravelTo(id)
-  }
-
-  /** 快速跳转：点岛即抵达该岛边泊岸（不必手动划过去）；相机平滑追上 */
-  fastTravelTo(id: string): void {
-    const def = islandById(id)
-    if (!def || store.mode === 'landed') return
-    if (statusOf(def) === 'foggy') {
-      showToast(`「${def.name}」还睡在迷雾里，${def.builder}的作品完成后它才会醒来`)
-      return
-    }
-    const obj = this.islands.get(id)!
-    let dx = this.ship.pos.x - def.position[0]
-    let dz = this.ship.pos.z - def.position[1]
-    const dl = Math.hypot(dx, dz) || 1
-    dx /= dl
-    dz /= dl
-    this.ship.pos.set(def.position[0] + dx * (obj.radius + 6), 0, def.position[1] + dz * (obj.radius + 6))
-    this.ship.heading = Math.atan2(-dx, -dz)
-    this.ship.speed = 0
-    this.keys.clear()
-    store.mode = 'docked'
-    store.dockedId = id
-    this.manualTargetId = null
-    this.noDockUntil = this.simTime + 1.5
-    if (statusOf(def) === 'locked') {
-      markVisited(id)
-      obj.playUnlock(this.simTime)
-      this.rings.spawn(def.position[0], def.position[1], this.simTime)
-      showToast(`✨ 寻获「${def.name}」！已寻获 ${foundCount.value} / ${discoverableCount.value} 座岛`)
-    } else {
-      showToast(`⛵ 已抵达「${def.name}」·点岛登岛`)
-    }
-  }
-
   setPaused(p: boolean): void {
     this.paused = p
-    this.keys.clear()
+    this.controls.clearKeys()
   }
 
   /** Hud 点击：平滑过渡到下一个时段（委托给 TimeOfDay） */
@@ -398,37 +347,11 @@ export class World {
   /** 给海豚随机安排下一次跃水的地点/朝向/弧高 */
   /** 小地图点击设目标（软引导：可指任何岛，迷雾岛给提示） */
   setManualTarget(id: string): void {
-    const def = islandById(id)
-    if (!def) return
-    if (statusOf(def) === 'foggy') {
-      showToast(`「${def.name}」还睡在迷雾里，${def.builder}的作品完成后它才会醒来`)
-      return
-    }
-    this.manualTargetId = id
-    store.targetId = id
-    showToast(`🧭 目标已设为「${def.name}」`)
-  }
-
-  land(): void {
-    if (!store.dockedId) return
-    const def = islandById(store.dockedId)
-    const obj = this.islands.get(store.dockedId)
-    if (!def || !obj) return
-    store.mode = 'landed'
-    this.landStart = this.simTime
-    const c = obj.group.position
-    this.landBaseAngle = Math.atan2(this.ship.pos.x - c.x, this.ship.pos.z - c.z)
-    obj.setFocused(true) // 岛飘起来
-  }
-
-  leave(): void {
-    if (store.mode !== 'landed') return
-    if (store.dockedId) this.islands.get(store.dockedId)?.setFocused(false) // 岛落回海面
-    store.mode = 'docked'
+    this.navigation.setManualTarget(id)
   }
 
   minimapData() {
-    return ISLANDS.map(def => {
+    return this.islandDefs.map(def => {
       const obj = this.islands.get(def.id)!
       return {
         id: def.id,
@@ -482,41 +405,6 @@ export class World {
     this.renderer.toneMappingExposure = cur.exposure
   }
 
-  private snapCamera(): void {
-    this.camLook.copy(this.ship.pos).setY(1.0)
-    this.camZoom = 1
-    this.camPos.copy(this.camLook).addScaledVector(ISO_DIR, ISO_DIST)
-    this.camera.position.copy(this.camPos)
-    this.camera.zoom = this.camZoom
-    this.camera.updateProjectionMatrix()
-    this.camera.lookAt(this.camLook)
-  }
-
-  private pickAutoTarget(): void {
-    // 目标锁定防抖：手动目标到手前不换；自动目标只在失效时重选
-    if (this.manualTargetId) {
-      const def = islandById(this.manualTargetId)
-      if (!def || statusOf(def) === 'foggy') this.manualTargetId = null
-      else {
-        store.targetId = this.manualTargetId
-        return
-      }
-    }
-    const curDef = store.targetId ? islandById(store.targetId) : undefined
-    if (curDef && statusOf(curDef) === 'locked') return
-    let best: string | null = null
-    let bestD = Infinity
-    for (const def of ISLANDS) {
-      if (statusOf(def) !== 'locked') continue
-      const d = Math.hypot(def.position[0] - this.ship.pos.x, def.position[1] - this.ship.pos.z)
-      if (d < bestD) {
-        bestD = d
-        best = def.id
-      }
-    }
-    store.targetId = best
-  }
-
   // ------------------------------------------------------------------
   private loop = (): void => {
     if (this.disposed) return
@@ -538,92 +426,35 @@ export class World {
     this.applyTheme(b)
 
     // ---- 操控 ----
-    const k = this.keys
-    let throttle = 0
-    let steer = 0
-    if (store.mode !== 'landed') {
-      if (k.has('w') || k.has('arrowup')) throttle += 1
-      if (k.has('s') || k.has('arrowdown')) throttle -= 0.6
-      if (k.has('a') || k.has('arrowleft')) steer += 1
-      if (k.has('d') || k.has('arrowright')) steer -= 1
-    }
+    const { throttle, steer } = this.controls.movement(store.mode !== 'landed')
     if (store.mode === 'docked' && (throttle !== 0 || steer !== 0)) {
       store.mode = 'sailing'
       store.dockedId = null
-      this.noDockUntil = sim + 2.5
+      this.navigation.markNoDockUntil(sim + 2.5)
     }
 
     // ---- 泊岸减速与到达 ----
-    let speedCap = Infinity
-    let nearId: string | null = null
-    let nearD = Infinity
-    if (store.mode === 'sailing') {
-      for (const def of ISLANDS) {
-        const obj = this.islands.get(def.id)!
-        const dx = this.ship.pos.x - def.position[0]
-        const dz = this.ship.pos.z - def.position[1]
-        const d = Math.hypot(dx, dz)
-        const st = statusOf(def)
-        // 硬碰撞：不穿模
-        const hardR = obj.radius * 0.9 + 2.5
-        if (d < hardR) {
-          const push = (hardR - d) / Math.max(d, 0.01)
-          this.ship.pos.x += dx * push
-          this.ship.pos.z += dz * push
-          this.ship.speed *= 0.4
-        }
-        if (st === 'foggy') {
-          if (d < obj.radius + 10 && !this.foggyToasted.has(def.id)) {
-            this.foggyToasted.add(def.id)
-            showToast(`「${def.name}」还睡在迷雾里……等${def.builder}的作品完成，它会醒来`)
-          }
-          continue
-        }
-        // 靠近范围内 → 记为高亮候选
-        if (d < obj.radius + 30 && d < nearD) {
-          nearD = d
-          nearId = def.id
-        }
-        // 软减速泊岸：只在"驶向该岛"时减速；离开时不夹速度（离岛手感顺畅）
-        if (d < obj.radius + 30) {
-          const tox = (def.position[0] - this.ship.pos.x) / Math.max(d, 0.01)
-          const toz = (def.position[1] - this.ship.pos.z) / Math.max(d, 0.01)
-          const fwd = this.ship.forward
-          if (fwd.x * tox + fwd.z * toz > 0.1) {
-            speedCap = Math.min(speedCap, Math.max(2.6, (d - (obj.radius + 5)) * 0.6))
-          }
-        }
-        if (d < obj.radius + 8.5 && sim > this.noDockUntil) {
-          store.mode = 'docked'
-          store.dockedId = def.id
-          this.ship.speed = 0
-          if (st === 'locked') {
-            markVisited(def.id)
-            obj.playUnlock(sim)
-            this.rings.spawn(def.position[0], def.position[1], sim)
-            if (this.manualTargetId === def.id) this.manualTargetId = null
-            showToast(`✨ 寻获「${def.name}」！已寻获 ${foundCount.value} / ${discoverableCount.value} 座岛`)
-          }
-        }
-      }
-      // 软边界：雾变浓 + 把船头温柔拽回岛群
-      if (b > 0.01) {
-        const toCenter = Math.atan2(-this.ship.pos.x, -this.ship.pos.z)
-        this.ship.heading += wrapAngle(toCenter - this.ship.heading) * Math.min(b * 1.1, 1) * dt * 1.2
-      }
-    }
+    const { speedCap, nearId } = updateSailing({
+      sim,
+      dt,
+      boundaryK: b,
+      ship: this.ship,
+      islandDefs: this.islandDefs,
+      getIslandObject: (id) => this.islands.get(id),
+      navigation: this.navigation,
+    })
 
     const sailing = store.mode === 'sailing'
     this.ship.update(dt, sim, sailing ? throttle : 0, sailing ? steer : 0, speedCap)
 
     // ?island=id 自动登岛
-    if (this.autoLandAt >= 0 && store.mode === 'docked' && sim >= this.autoLandAt) {
-      this.autoLandAt = -1
-      this.land()
+    if (this.navigation.getAutoLandAt() >= 0 && store.mode === 'docked' && sim >= this.navigation.getAutoLandAt()) {
+      this.navigation.clearAutoLand()
+      this.navigation.land()
     }
 
     // ---- 宝箱指引 ----
-    this.pickAutoTarget()
+    this.navigation.pickAutoTarget(this.islandDefs, this.ship.pos)
     const targetDef = store.targetId ? islandById(store.targetId) : undefined
     this.ship.pointArrowAt(
       targetDef && store.mode === 'sailing'
@@ -655,7 +486,7 @@ export class World {
     const shipX = this.ship.pos.x
     const shipZ = this.ship.pos.z
     const CULL2 = 300 * 300 // 超出此半径且非生长/登岛的岛，屏外看不见 → 跳过更新
-    for (const def of ISLANDS) {
+    for (const def of this.islandDefs) {
       const obj = this.islands.get(def.id)!
       const st = statusOf(def) as IslandStatus // 每帧每岛只取一次 reactive
       obj.setHighlight(def.id === highlightId)
@@ -693,8 +524,8 @@ export class World {
     const oceanD = this.oceanNearD
     for (let k = 0; k < OCEAN_NEAR; k++) { oceanD[k] = Infinity; islandVecs[k].set(0, 0, 0) }
     const sx = this.ship.pos.x, sz = this.ship.pos.z
-    for (let i = 0; i < ISLANDS.length; i++) {
-      const def = ISLANDS[i]
+    for (let i = 0; i < this.islandDefs.length; i++) {
+      const def = this.islandDefs[i]
       const r = this.islands.get(def.id)!.foamRadius
       if (r < 0.5) continue // 迷雾岛没有浅滩
       const dx = def.position[0] - sx, dz = def.position[1] - sz
@@ -709,34 +540,14 @@ export class World {
     }
     this.ocean.position.set(this.ship.pos.x, 0, this.ship.pos.z) // 海盘几何跟着船，始终铺满视野
 
-    // ---- 相机：世界锁死等距角度，只平移不转向；登岛用 zoom 推近 ----
-    const look = new THREE.Vector3()
-    let zoom = 1
-    if (store.mode === 'landed' && store.dockedId) {
-      const obj = this.islands.get(store.dockedId)!
-      const c = obj.group.position
-      // 视线跟着升起的岛抬高（c.y 已含升起量）
-      look.set(c.x, c.y + obj.topY * 0.34 + 2, c.z)
-      // 推近：让这座岛占画面约 62%（正交靠 zoom 放大，不改角度）
-      zoom = THREE.MathUtils.clamp((FRUSTUM * 0.62) / (obj.radius + 6), 1.5, 4.5)
-    } else {
-      // 跟随船：视线锁在船上（略微提前一点点朝航向），场景随航行不断挪动
-      const fwd = this.ship.forward
-      look.set(this.ship.pos.x + fwd.x * 10, 1.0, this.ship.pos.z + fwd.z * 10)
-    }
-    const camDamp = this.snapMode ? 1 : 1 - Math.exp(-3.0 * dt)
-    this.camLook.lerp(look, camDamp)
-    this.camZoom += (zoom - this.camZoom) * camDamp
-    this.camPos.copy(this.camLook).addScaledVector(ISO_DIR, ISO_DIST)
-    this.camera.position.copy(this.camPos)
-    this.camera.zoom = this.camZoom
-    this.camera.updateProjectionMatrix()
-    this.camera.lookAt(this.camLook)
-
-    // 聚焦程度：登岛时外围压暗虚化（喂给调色 pass）
-    this.focusK += ((store.mode === 'landed' ? 1 : 0) - this.focusK) * (this.snapMode ? 1 : 1 - Math.exp(-3.0 * dt))
+    const focusK = this.cameraRig.update({
+      dt,
+      snapMode: this.snapMode,
+      ship: this.ship,
+      getDockedIslandObject: () => (store.dockedId ? this.islands.get(store.dockedId) : undefined),
+    })
     this.postfx.render({
-      focusK: this.focusK,
+      focusK,
       time: sim,
       nightK: this.tod.nightK,
       tint: this.tod.tint,
@@ -755,18 +566,14 @@ export class World {
   dispose(): void {
     this.disposed = true
     window.removeEventListener('resize', this.updateSizes)
-    window.removeEventListener('keydown', this.onKeyDown)
-    window.removeEventListener('keyup', this.onKeyUp)
-    this.renderer.domElement.removeEventListener('click', this.onCanvasClick)
-    window.removeEventListener('blur', this.onBlur)
-    document.removeEventListener('visibilitychange', this.onVisibility)
+    this.controls.detach()
     this.renderer.dispose()
   }
 }
 
 let world: World | null = null
-export function createWorld(canvas: HTMLCanvasElement): World {
-  world = new World(canvas)
+export function createWorld(canvas: HTMLCanvasElement, islands: IslandDef[]): World {
+  world = new World(canvas, islands)
   return world
 }
 export function getWorld(): World | null {

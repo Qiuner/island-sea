@@ -9,6 +9,7 @@ const todIcon = computed(() => TOD_ICON[store.todLabel] ?? '☀️')
 const dockedName = computed(() => (store.dockedId ? islandById(store.dockedId)?.name ?? '' : ''))
 
 const toastVisible = ref(false)
+const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost'
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 watch(
   () => store.toastKey,
@@ -25,6 +26,9 @@ function skipTime() {
 function doLand() {
   getWorld()?.land()
 }
+function openAdmin() {
+  window.location.href = adminUrl
+}
 </script>
 
 <template>
@@ -33,9 +37,12 @@ function doLand() {
     <div class="hud-top">
       <div class="chip progress">🏝 已寻获 <b>{{ foundCount }}</b> / {{ discoverableCount }} 座岛</div>
       <div class="wordmark">造物群岛<span>每个孩子都是一座岛</span></div>
-      <button class="chip btn" @click="skipTime" title="时间随现实自然流转 · 点击跳到下一个时段">
-        {{ todIcon }} {{ store.todLabel }}
-      </button>
+      <div class="hud-actions">
+        <button class="chip btn" @click="skipTime" title="时间随现实自然流转 · 点击跳到下一个时段">
+          {{ todIcon }} {{ store.todLabel }}
+        </button>
+        <button class="chip btn admin-entry" @click="openAdmin">管理登录</button>
+      </div>
     </div>
 
     <!-- toast -->

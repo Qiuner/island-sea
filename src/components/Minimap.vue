@@ -177,8 +177,8 @@ function onClick(e: MouseEvent) {
   const canvas = cv.value
   if (!world || !canvas) return
   const rect = canvas.getBoundingClientRect()
-  const mx = e.clientX - rect.left
-  const my = e.clientY - rect.top
+  const mx = (e.clientX - rect.left) * (SIZE / rect.width)
+  const my = (e.clientY - rect.top) * (SIZE / rect.height)
   const c = SIZE / 2
   let best: string | null = null
   let bestD = 16

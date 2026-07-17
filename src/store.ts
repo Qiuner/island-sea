@@ -1,5 +1,5 @@
 import { reactive, computed } from 'vue'
-import { ISLANDS, type IslandDef } from './data/islands'
+import type { IslandDef } from './data/islands'
 
 // 界面与 3D 世界共享的状态。解锁进度存 localStorage（"每个访客自己的"），
 // 岛数据本身不带状态 —— foggy 由 projects 是否为空派生，visited 由本地进度派生。
@@ -19,6 +19,7 @@ function loadVisited(): string[] {
 }
 
 export const store = reactive({
+  islands: [] as IslandDef[],
   visited: new Set<string>(loadVisited()),
   /** ?unlock=all 等演示钩子只改内存，不落盘 */
   ephemeral: false,
@@ -36,7 +37,11 @@ export const store = reactive({
 })
 
 export function islandById(id: string): IslandDef | undefined {
-  return ISLANDS.find(i => i.id === id)
+  return store.islands.find(i => i.id === id)
+}
+
+export function setIslands(islands: IslandDef[]): void {
+  store.islands = islands
 }
 
 export function statusOf(def: IslandDef): 'foggy' | 'locked' | 'visited' {
@@ -45,10 +50,10 @@ export function statusOf(def: IslandDef): 'foggy' | 'locked' | 'visited' {
 }
 
 export const discoverableCount = computed(
-  () => ISLANDS.filter(i => i.projects.length > 0 && !store.pendingGrow.has(i.id)).length,
+  () => store.islands.filter(i => i.projects.length > 0 && !store.pendingGrow.has(i.id)).length,
 )
 export const foundCount = computed(
-  () => ISLANDS.filter(i => i.projects.length > 0 && store.visited.has(i.id)).length,
+  () => store.islands.filter(i => i.projects.length > 0 && store.visited.has(i.id)).length,
 )
 
 export function markVisited(id: string): void {
@@ -81,11 +86,11 @@ export function detectGrowth(): string[] {
   }
   const firstRun = Object.keys(known).length === 0
   const grew: string[] = []
-  for (const isl of ISLANDS) {
+  for (const isl of store.islands) {
     if (!firstRun && isl.projects.length > 0 && known[isl.id] === 0) grew.push(isl.id)
   }
   const next: Record<string, number> = {}
-  for (const isl of ISLANDS) next[isl.id] = isl.projects.length
+  for (const isl of store.islands) next[isl.id] = isl.projects.length
   // 演示钩子(?unlock=all 等)只改内存不落盘，避免污染真实进度
   if (!store.ephemeral) localStorage.setItem(LS_KNOWN, JSON.stringify(next))
   return grew

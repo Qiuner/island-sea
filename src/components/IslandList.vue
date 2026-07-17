@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { ISLANDS } from '../data/islands'
-import { statusOf } from '../store'
+import { statusOf, store } from '../store'
 import { getWorld } from '../three/world'
 
 // 岛屿名录：按孩子名/岛名搜索，点一下即快速前往那座岛（解决 30 个无标签圆点难找人的问题）。
@@ -13,7 +12,7 @@ const STATUS_TXT: Record<string, string> = { foggy: '迷雾中', locked: '待寻
 
 const list = computed(() => {
   const kw = q.value.trim()
-  return ISLANDS.map((i) => ({ id: i.id, name: i.name, builder: i.builder, status: statusOf(i) })).filter(
+  return store.islands.map((i) => ({ id: i.id, name: i.name, builder: i.builder, status: statusOf(i) })).filter(
     (i) => !kw || i.name.includes(kw) || i.builder.includes(kw),
   )
 })

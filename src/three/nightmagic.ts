@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { ISLANDS } from '../data/islands'
+import type { IslandDef } from '../data/islands'
 import { mulberry32 } from './rng'
 import { glowTexture } from './sprites'
 
@@ -7,13 +7,13 @@ import { glowTexture } from './sprites'
 // 白天 nightK≈0 → 全部隐去；入夜渐显。
 
 // ---- 萤火虫：岛屿周围明灭漂浮的暖光点 ----
-export function createFireflies() {
-  const N = 300
+export function createFireflies(islands: IslandDef[]) {
+  const N = islands.length > 0 ? 300 : 0
   const pos = new Float32Array(N * 3)
   const seed = new Float32Array(N)
   const rng = mulberry32(918)
   for (let i = 0; i < N; i++) {
-    const isl = ISLANDS[Math.floor(rng() * ISLANDS.length)]
+    const isl = islands[Math.floor(rng() * islands.length)]
     const a = rng() * Math.PI * 2
     const r = 10 + rng() * 13
     pos[i * 3] = isl.position[0] + Math.cos(a) * r

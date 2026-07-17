@@ -1,0 +1,15 @@
+services:
+  island-web:
+    build:
+      context: .
+      args:
+        VITE_API_BASE_URL: /api
+        VITE_ADMIN_URL: ${ADMIN_URL:-http://localhost}
+    image: island-sea/web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://host.docker.internal:8080}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${HTTP_PORT:-5176}:80"
