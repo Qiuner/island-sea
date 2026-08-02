@@ -5,6 +5,7 @@ import { build } from 'esbuild'
 
 async function loadNavigation(store) {
   globalThis.__navigationTestStore = store
+  globalThis.__navigationToasts = []
   const result = await build({
     entryPoints: [fileURLToPath(new URL('../src/three/world-navigation.ts', import.meta.url))],
     bundle: true,
@@ -24,9 +25,9 @@ async function loadNavigation(store) {
             export const foundCount = { value: 1 }
             export const discoverableCount = { value: 1 }
             export const islandById = id => store.islands.find(island => island.id === id)
-            export const statusOf = def => store.visited.has(def.id) ? 'visited' : 'locked'
+            export const statusOf = def => def.projects.length === 0 ? 'foggy' : (store.visited.has(def.id) ? 'visited' : 'locked')
             export const markVisited = id => store.visited.add(id)
-            export const showToast = () => {}
+            export const showToast = message => globalThis.__navigationToasts.push(message)
           `,
           loader: 'js',
         }))
@@ -44,6 +45,7 @@ test('reaching a discoverable island lands and focuses it immediately', async ()
     builder: '测试学员',
     theme: 'forest',
     projects: [{ id: 'work-1', name: '作品', url: '/works/1' }],
+    photos: [],
     position: [10, 20],
   }
   const store = {
@@ -86,4 +88,48 @@ test('reaching a discoverable island lands and focuses it immediately', async ()
   assert.equal(ship.speed, 0)
   assert.equal(focused, true)
   assert.deepEqual(landAnchor, { sim: 3, angle: 0 })
+})
+
+test('touching an inactive island shows the second cohort message without landing', async () => {
+  const island = {
+    id: 'future-island-01',
+    name: '二期待启航岛 01',
+    builder: '未来造物局',
+    theme: 'forest',
+    projects: [],
+    photos: [],
+    position: [10, 20],
+  }
+  const store = {
+    islands: [island],
+    visited: new Set(),
+    mode: 'sailing',
+    dockedId: null,
+    targetId: null,
+  }
+  const ship = {
+    pos: { x: 10, z: 48 },
+    heading: 0,
+    speed: 2.6,
+  }
+  const islandObject = {
+    radius: 20,
+    group: { position: { x: 10, z: 20 } },
+    setFocused() {},
+  }
+  const { WorldNavigation } = await loadNavigation(store)
+  const navigation = new WorldNavigation({
+    getSimTime: () => 3,
+    clearControls: () => {},
+    getShipState: () => ship,
+    getIslandObject: id => id === island.id ? islandObject : undefined,
+    spawnUnlockRing: () => {},
+    setLandAnchor: () => {},
+  })
+
+  navigation.tryDockCandidate(island, islandObject, 28, 3)
+
+  assert.equal(store.mode, 'sailing')
+  assert.equal(store.dockedId, null)
+  assert.deepEqual(globalThis.__navigationToasts, ['等待未来造物局二期开班'])
 })

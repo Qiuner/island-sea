@@ -2,6 +2,14 @@ export interface ProjectRef {
   id: string
   name: string
   url: string
+  cover?: string
+}
+
+export interface IslandPhotoRef {
+  id: string
+  url: string
+  caption?: string
+  alt: string
 }
 
 export interface IslandSource {
@@ -11,17 +19,138 @@ export interface IslandSource {
   description?: string
   theme: 'forest' | 'volcano' | 'snow'
   projects: ProjectRef[]
+  photos: IslandPhotoRef[]
 }
 
 export interface IslandDef extends IslandSource {
   position: [number, number]
 }
 
-const DEMO_SOURCES: IslandSource[] = [
-  { id: 'demo-1', name: '明澈屿', builder: '小鱼', theme: 'forest', projects: [] },
-  { id: 'demo-2', name: '熔金岛', builder: '石头', theme: 'volcano', projects: [] },
-  { id: 'demo-3', name: '雪鲸岛', builder: '朵朵', theme: 'snow', projects: [] },
+function localPhoto(
+  islandId: string,
+  index: number,
+  fileName: string,
+  builder: string,
+): IslandPhotoRef {
+  return {
+    id: `${islandId}-photo-${String(index).padStart(2, '0')}`,
+    url: `./camp-photos/${fileName}`,
+    caption: `训练营现场 ${index}`,
+    alt: `${builder}在未来造物局训练营的活动照片`,
+  }
+}
+
+const PROJECT_PREVIEWS: Record<string, string> = {
+  '/planet-party/': './work-previews/planet-party.jpg',
+  '/scenic-map/': './work-previews/scenic-map.jpg',
+  '/idea-pilot/': './work-previews/idea-pilot.jpg',
+  '/oriental-pearl/': './work-previews/oriental-pearl.jpg',
+}
+
+export function projectPreviewFor(url: string): string | undefined {
+  const match = Object.entries(PROJECT_PREVIEWS).find(([path]) => url.includes(path))
+  return match?.[1]
+}
+
+// 2026-08-02 线上公开接口快照：本地后端不可用时仍能完整预览已发布岛屿。
+const PUBLISHED_ISLAND_SNAPSHOT: IslandSource[] = [
+  {
+    id: 'island-10001',
+    name: '奥秘星球',
+    builder: '杨空聆',
+    description: '驾驶圆滚小生物球球，参加五种玩法组成的星际派对竞技大赛。',
+    theme: 'volcano',
+    projects: [
+      {
+        id: 'project-10001',
+        name: '星球派对：圆滚冒险',
+        url: 'https://fmlab.vip/island/works/planet-party/',
+        cover: projectPreviewFor('https://fmlab.vip/island/works/planet-party/'),
+      },
+    ],
+    photos: [
+      localPhoto('island-10001', 1, 'yang-kongling-01.jpg', '杨空聆'),
+      localPhoto('island-10001', 2, 'yang-kongling-02.jpg', '杨空聆'),
+      localPhoto('island-10001', 3, 'yang-kongling-03.jpg', '杨空聆'),
+      localPhoto('island-10001', 4, 'yang-kongling-04.jpg', '杨空聆'),
+    ],
+  },
+  {
+    id: 'island-10002',
+    name: '神州漫游岛',
+    builder: '钟昊恩',
+    description: '在全国地图上探索 5A 景区，随机发现城市与景点。',
+    theme: 'forest',
+    projects: [
+      {
+        id: 'project-10002',
+        name: '全国 5A 景区探索地图',
+        url: 'https://fmlab.vip/island/works/scenic-map/',
+        cover: projectPreviewFor('https://fmlab.vip/island/works/scenic-map/'),
+      },
+    ],
+    photos: [
+      localPhoto('island-10002', 1, 'zhong-haoen-01.jpg', '钟昊恩'),
+      localPhoto('island-10002', 2, 'zhong-haoen-02.jpg', '钟昊恩'),
+      localPhoto('island-10002', 3, 'zhong-haoen-03.jpg', '钟昊恩'),
+    ],
+  },
+  {
+    id: 'island-10003',
+    name: '思辨启航岛',
+    builder: '王惠诚',
+    description: '用严肃的逐步诊断，把模糊项目想法收敛成可验证的 MVP 和开发提示词。',
+    theme: 'snow',
+    projects: [
+      {
+        id: 'project-10003',
+        name: 'IdeaPilot 想法明确工具',
+        url: 'https://fmlab.vip/island/works/idea-pilot/',
+        cover: projectPreviewFor('https://fmlab.vip/island/works/idea-pilot/'),
+      },
+    ],
+    photos: [
+      localPhoto('island-10003', 1, 'wang-huicheng-01.jpg', '王惠诚'),
+      localPhoto('island-10003', 2, 'wang-huicheng-02.jpg', '王惠诚'),
+      localPhoto('island-10003', 3, 'wang-huicheng-03.jpg', '王惠诚'),
+      localPhoto('island-10003', 4, 'wang-huicheng-04.jpg', '王惠诚'),
+      localPhoto('island-10003', 5, 'wang-huicheng-05.jpg', '王惠诚'),
+    ],
+  },
+  {
+    id: 'island-10004',
+    name: '东方明珠岛',
+    builder: '陈岂帆',
+    description: '操控小旅人在 3D 陆家嘴自由行走，探索东方明珠、上海中心等地标并切换昼夜景观。',
+    theme: 'snow',
+    projects: [
+      {
+        id: 'project-10004',
+        name: '云游·东方明珠',
+        url: 'https://fmlab.vip/island/works/oriental-pearl/',
+        cover: projectPreviewFor('https://fmlab.vip/island/works/oriental-pearl/'),
+      },
+    ],
+    photos: [
+      localPhoto('island-10004', 1, 'chen-qifan-01.jpg', '陈岂帆'),
+      localPhoto('island-10004', 2, 'chen-qifan-02.jpg', '陈岂帆'),
+      localPhoto('island-10004', 3, 'chen-qifan-03.jpg', '陈岂帆'),
+      localPhoto('island-10004', 4, 'chen-qifan-04.jpg', '陈岂帆'),
+    ],
+  },
 ]
+
+const FUTURE_ISLAND_COUNT = 12
+const THEMES: IslandSource['theme'][] = ['forest', 'volcano', 'snow']
+const FUTURE_ISLANDS: IslandSource[] = Array.from({ length: FUTURE_ISLAND_COUNT }, (_, index) => ({
+  id: `future-island-${String(index + 1).padStart(2, '0')}`,
+  name: `二期待启航岛 ${String(index + 1).padStart(2, '0')}`,
+  builder: '未来造物局',
+  description: '等待未来造物局二期开班',
+  theme: THEMES[index % THEMES.length],
+  projects: [],
+  photos: [],
+}))
 
 function lcg(seed: number): () => number {
   let state = seed % 2147483647
@@ -53,6 +182,12 @@ export function layoutIslands(sources: IslandSource[]): IslandDef[] {
   })
 }
 
-export const DEMO_ISLANDS = layoutIslands(DEMO_SOURCES)
+export function layoutIslandWorld(publishedSources: IslandSource[]): IslandDef[] {
+  const publishedIds = new Set(publishedSources.map(source => source.id))
+  const futureSources = FUTURE_ISLANDS.filter(source => !publishedIds.has(source.id))
+  return layoutIslands([...publishedSources, ...futureSources])
+}
+
+export const LOCAL_FALLBACK_ISLANDS = layoutIslandWorld(PUBLISHED_ISLAND_SNAPSHOT)
 export const WORLD_RADIUS = 640
 export const SPAWN: [number, number] = [0, 0]

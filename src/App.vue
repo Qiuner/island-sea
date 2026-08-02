@@ -45,7 +45,7 @@ onMounted(async () => {
     <template v-if="!failed">
       <Hud />
       <IslandList v-if="store.mode !== 'landed'" />
-      <Minimap />
+      <Minimap v-if="store.mode !== 'landed'" />
       <IslandPanel v-if="store.mode === 'landed'" />
       <div v-if="empty" class="empty-world">海面正在等待第一座岛</div>
     </template>

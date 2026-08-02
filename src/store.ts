@@ -2,7 +2,7 @@ import { reactive, computed } from 'vue'
 import type { IslandDef } from './data/islands'
 
 // 界面与 3D 世界共享的状态。解锁进度存 localStorage（"每个访客自己的"），
-// 岛数据本身不带状态 —— foggy 由 projects 是否为空派生，visited 由本地进度派生。
+// 岛数据本身不带状态：无作品的是二期待启航岛，visited 由本地进度派生。
 
 const LS_VISITED = 'island-sea:visited'
 const LS_KNOWN = 'island-sea:known-projects'

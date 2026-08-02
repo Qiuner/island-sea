@@ -8,7 +8,7 @@ const open = ref(false)
 const q = ref('')
 
 const STATUS_DOT: Record<string, string> = { foggy: '#9aa6b4', locked: '#e0a53a', visited: '#5aa86a' }
-const STATUS_TXT: Record<string, string> = { foggy: '迷雾中', locked: '待寻获', visited: '已寻获' }
+const STATUS_TXT: Record<string, string> = { foggy: '二期待启航', locked: '待寻获', visited: '已寻获' }
 
 const list = computed(() => {
   const kw = q.value.trim()
@@ -18,9 +18,8 @@ const list = computed(() => {
 })
 
 function go(id: string, status: string) {
-  if (status === 'foggy') return
   getWorld()?.fastTravelTo(id)
-  open.value = false
+  if (status !== 'foggy') open.value = false
 }
 </script>
 

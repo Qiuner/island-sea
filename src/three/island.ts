@@ -199,7 +199,7 @@ export class IslandObject {
     this.lanternHead = lantern.lanternHead
     this.lanternGlow = lantern.lanternGlow
     this.beacon = createBeacon(this.group, topY)
-    const label = createLabel(this.group, def.name, topY)
+    const label = createLabel(this.group, `${def.builder} · ${def.name}`, topY)
     this.label = label.label
     this.labelW = label.aspect
     this.fogSprites = createFogSprites(this.group, r, rng)

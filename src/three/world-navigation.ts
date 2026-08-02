@@ -3,6 +3,8 @@ import { store, statusOf, markVisited, islandById, showToast, foundCount, discov
 import type { IslandDef } from '../data/islands'
 import type { IslandObject } from './island'
 
+const INACTIVE_ISLAND_MESSAGE = '等待未来造物局二期开班'
+
 interface WorldNavigationDeps {
   getSimTime: () => number
   clearControls: () => void
@@ -62,7 +64,7 @@ export class WorldNavigation {
     const def = islandById(id)
     if (!def || store.mode === 'landed') return
     if (statusOf(def) === 'foggy') {
-      showToast(`「${def.name}」还睡在迷雾里，${def.builder}的作品完成后它才会醒来`)
+      showToast(INACTIVE_ISLAND_MESSAGE)
       return
     }
     const obj = this.getIslandObject(id)
@@ -93,7 +95,7 @@ export class WorldNavigation {
     const def = islandById(id)
     if (!def) return
     if (statusOf(def) === 'foggy') {
-      showToast(`「${def.name}」还睡在迷雾里，${def.builder}的作品完成后它才会醒来`)
+      showToast(INACTIVE_ISLAND_MESSAGE)
       return
     }
     this.manualTargetId = id
@@ -128,9 +130,13 @@ export class WorldNavigation {
   tryDockCandidate(def: IslandDef, obj: IslandObject, d: number, sim: number): void {
     const st = statusOf(def)
     if (st === 'foggy') {
+      if (d >= obj.radius + 14) {
+        this.foggyToasted.delete(def.id)
+        return
+      }
       if (d < obj.radius + 10 && !this.foggyToasted.has(def.id)) {
         this.foggyToasted.add(def.id)
-        showToast(`「${def.name}」还睡在迷雾里……等${def.builder}的作品完成，它会醒来`)
+        showToast(INACTIVE_ISLAND_MESSAGE)
       }
       return
     }

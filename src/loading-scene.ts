@@ -64,6 +64,7 @@ export function initLoadingScene(canvas: HTMLCanvasElement): () => void {
     theme: 'forest',
     position: [36, 0],
     projects: [{ id: 'preview', name: 'preview', url: '#' }],
+    photos: [],
   }
 
   const island = new IslandObject(islandDef)
