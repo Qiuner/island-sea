@@ -88,6 +88,7 @@ docker compose -f deploy/docker-compose.prod.yml up -d --no-build
 | 星球派对：圆滚冒险 | React + Three.js/Vite，Docker 使用 Node.js 20 和 pnpm 9.4 构建 | `/works/planet-party/` | `/island/works/planet-party/` |
 | 全国 5A 景区探索地图 | 原生 HTML/CSS/JavaScript + ECharts | `/works/scenic-map/` | `/island/works/scenic-map/` |
 | IdeaPilot 想法明确工具 | Vinext + React 19 + Node.js 22，独立服务端容器调用 DeepSeek | `/works/idea-pilot/` | `/island/works/idea-pilot/` |
+| 云游·东方明珠 | 原生 HTML/CSS/JavaScript + Three.js，依赖随官网镜像本地托管 | `/works/oriental-pearl/` | `/island/works/oriental-pearl/` |
 
 作品 URL 由后台“官网岛屿”维护。新增需要编译的纯前端作品时，应在 Dockerfile 中增加独立构建阶段；需要服务端 API 的作品使用独立 Dockerfile 和 Compose 服务。纯静态作品只复制运行所需文件，不复制 `.git`、开发服务器或依赖目录。
 

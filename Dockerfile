@@ -40,5 +40,12 @@ COPY APortfolioOfWorks/echart/db /usr/share/nginx/html/works/scenic-map/db
 COPY APortfolioOfWorks/echart/font /usr/share/nginx/html/works/scenic-map/font
 COPY APortfolioOfWorks/echart/images /usr/share/nginx/html/works/scenic-map/images
 COPY APortfolioOfWorks/echart/js /usr/share/nginx/html/works/scenic-map/js
+COPY "APortfolioOfWorks/云游东方明珠-漫游版/云游·东方明珠.html" /usr/share/nginx/html/works/oriental-pearl/index.html
+COPY --from=builder /app/node_modules/three/build/three.module.js /usr/share/nginx/html/works/oriental-pearl/vendor/three.module.js
+COPY --from=builder /app/node_modules/three/examples/jsm /usr/share/nginx/html/works/oriental-pearl/vendor/addons
+RUN sed -i \
+    -e 's#https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js#./vendor/three.module.js#' \
+    -e 's#https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/#./vendor/addons/#' \
+    /usr/share/nginx/html/works/oriental-pearl/index.html
 
 EXPOSE 80
