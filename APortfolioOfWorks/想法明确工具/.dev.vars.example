@@ -1,0 +1,8 @@
+# 在 .dev.vars 中填写实际值；该文件不会被提交。
+DEEPSEEK_API_KEY=your_deepseek_api_key
+
+# 默认使用速度和成本更友好的模型；需要更强能力时可改为 deepseek-v4-pro。
+DEEPSEEK_MODEL=deepseek-v4-flash
+
+# DeepSeek OpenAI-compatible API 地址。
+DEEPSEEK_BASE_URL=https://api.deepseek.com

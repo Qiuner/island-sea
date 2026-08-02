@@ -62,9 +62,9 @@ export class WorldControls {
     this.keys.clear()
   }
 
-  movement(canSail: boolean): { throttle: number; steer: number } {
+  movement(canSail: boolean): { throttle: number; steer: number; sprint: boolean } {
     if (!canSail) {
-      return { throttle: 0, steer: 0 }
+      return { throttle: 0, steer: 0, sprint: false }
     }
     let throttle = 0
     let steer = 0
@@ -72,7 +72,7 @@ export class WorldControls {
     if (this.keys.has('s') || this.keys.has('arrowdown')) throttle -= 0.6
     if (this.keys.has('a') || this.keys.has('arrowleft')) steer += 1
     if (this.keys.has('d') || this.keys.has('arrowright')) steer -= 1
-    return { throttle, steer }
+    return { throttle, steer, sprint: this.keys.has('shift') }
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {

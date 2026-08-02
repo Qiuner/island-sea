@@ -50,6 +50,14 @@ export class WorldNavigation {
     this.autoLandAt = sim
   }
 
+  private faceAwayFromIsland(def: IslandDef): void {
+    const ship = this.getShipState()
+    const dx = ship.pos.x - def.position[0]
+    const dz = ship.pos.z - def.position[1]
+    const d = Math.hypot(dx, dz) || 1
+    ship.heading = Math.atan2(dx / d, dz / d)
+  }
+
   fastTravelTo(id: string): void {
     const def = islandById(id)
     if (!def || store.mode === 'landed') return
@@ -66,7 +74,7 @@ export class WorldNavigation {
     dx /= dl
     dz /= dl
     ship.pos.set(def.position[0] + dx * (obj.radius + 6), 0, def.position[1] + dz * (obj.radius + 6))
-    ship.heading = Math.atan2(-dx, -dz)
+    ship.heading = Math.atan2(dx, dz)
     ship.speed = 0
     this.clearControls()
     store.mode = 'docked'
@@ -76,8 +84,9 @@ export class WorldNavigation {
     if (statusOf(def) === 'locked') {
       this.unlockIsland(def, this.getSimTime())
     } else {
-      showToast(`⛵ 已抵达「${def.name}」·点岛登岛`)
+      showToast(`⛵ 已抵达「${def.name}」`)
     }
+    this.land()
   }
 
   setManualTarget(id: string): void {
@@ -132,10 +141,12 @@ export class WorldNavigation {
     store.mode = 'docked'
     store.dockedId = def.id
     ship.speed = 0
+    this.faceAwayFromIsland(def)
     if (st === 'locked') {
       this.manualTargetId = this.manualTargetId === def.id ? null : this.manualTargetId
       this.unlockIsland(def, sim)
     }
+    this.land()
   }
 
   land(): void {

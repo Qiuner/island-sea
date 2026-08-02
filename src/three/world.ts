@@ -121,7 +121,8 @@ export class World {
       const el = document.getElementById('loading')
       if (el) {
         el.dataset.failed = '1' // 标记已给出精确文案，App.vue 的兜底不再覆盖
-        el.innerHTML = '<p style="letter-spacing:0.1em">这台设备暂时打不开 3D 海洋，请换一台电脑试试 🥲</p>'
+        el.querySelector('[data-role="status"]')!.textContent = '这台设备暂时打不开这片海'
+        el.querySelector('[data-role="subtitle"]')!.textContent = '可以刷新重试，或换一台图形性能更好的设备再来看看。'
       }
       throw e
     }
@@ -426,7 +427,7 @@ export class World {
     this.applyTheme(b)
 
     // ---- 操控 ----
-    const { throttle, steer } = this.controls.movement(store.mode !== 'landed')
+    const { throttle, steer, sprint } = this.controls.movement(store.mode !== 'landed')
     if (store.mode === 'docked' && (throttle !== 0 || steer !== 0)) {
       store.mode = 'sailing'
       store.dockedId = null
@@ -445,7 +446,7 @@ export class World {
     })
 
     const sailing = store.mode === 'sailing'
-    this.ship.update(dt, sim, sailing ? throttle : 0, sailing ? steer : 0, speedCap)
+    this.ship.update(dt, sim, sailing ? throttle : 0, sailing ? steer : 0, sailing ? sprint : false, speedCap)
 
     // ?island=id 自动登岛
     if (this.navigation.getAutoLandAt() >= 0 && store.mode === 'docked' && sim >= this.navigation.getAutoLandAt()) {

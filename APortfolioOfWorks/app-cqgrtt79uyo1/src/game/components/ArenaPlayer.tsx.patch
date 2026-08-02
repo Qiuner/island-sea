@@ -1,0 +1,125 @@
+--- /workspace/app-cqgrtt79uyo1/src/game/components/ArenaPlayer.tsx
++++ /workspace/app-cqgrtt79uyo1/src/game/components/ArenaPlayer.tsx
+@@ -109,33 +109,114 @@
+       };
+ 
++      // find nearest enemy
++      const findNearestEnemy = (range: number) => {
++        const pPos = playerPosRef.current;
++        const currentPositions = arenaPositionsRef.current;
++        let nearest: string | null = null;
++        let minDist = range;
++        Object.entries(currentPositions).forEach(([targetId, tPosArr]) => {
++          if (targetId === id || targetId.startsWith(`t${pState.team}_`)) return;
++          const tPos = new THREE.Vector3(...tPosArr);
++          const dist = pPos.distanceTo(tPos);
++          if (dist < minDist) {
++            minDist = dist;
++            nearest = targetId;
++          }
++        });
++        return nearest;
++      };
++
+       if (key === 'q' && playerCooldowns[0] === 0) {
+-        // 技能1：冰冻射线 (15 dmg, freeze 2s, CD 8s)
+-        const targets = findTargetsInFront(8, 2);
+-        targets.forEach(tid => {
+-          applyDamage(tid, 15 * dmgMult);
+-          applyStatus(tid, 'freeze', 2);
+-        });
+-        let cd = 8;
++        let cd = 10;
++        if (pState.role === 'blue') {
++          cd = 8;
++          findTargetsInFront(8, 2).forEach(tid => { applyDamage(tid, 15 * dmgMult); applyStatus(tid, 'freeze', 2); });
++        } else if (pState.role === 'red') {
++          cd = 6;
++          findTargetsInFront(5, 2).forEach(tid => applyDamage(tid, 20 * dmgMult));
++        } else if (pState.role === 'pink') {
++          cd = 12;
++          applyHeal(`t${pState.team}_p2`, 30);
++        } else if (pState.role === 'yellow') {
++          cd = 8;
++          const nearest = findNearestEnemy(5);
++          if (nearest) { applyDamage(nearest, 10 * dmgMult); applyStatus(nearest, 'stun', 1); }
++        } else if (pState.role === 'black') {
++          cd = 10;
++          const nearest = findNearestEnemy(5);
++          if (nearest) applyDamage(nearest, 25 * dmgMult);
++        }
+         if (teamCards[pState.team] === 'cd_down') cd *= 0.7;
+         setPlayerCooldown(0, cd);
++        setVisualEffect('q');
+       } else if (key === 'w' && playerCooldowns[1] === 0) {
+-        // 技能2：护盾展开 (shield 30 to self and teammate, 5s, CD 15s)
+-        applyShield(id, 30);
+-        applyShield(`t${pState.team}_p2`, 30);
+-        let cd = 15;
++        let cd = 15;
++        if (pState.role === 'blue') {
++          applyShield(id, 30); applyShield(`t${pState.team}_p2`, 30);
++        } else if (pState.role === 'red') {
++          if (bodyRef.current) {
++            const pos = bodyRef.current.translation();
++            bodyRef.current.setTranslation({ x: pos.x + playerDirRef.current.x * 8, y: pos.y, z: pos.z + playerDirRef.current.z * 8 }, true);
++            findTargetsInFront(8, 2).forEach(tid => applyDamage(tid, 10 * dmgMult));
++          }
++        } else if (pState.role === 'pink') {
++          cd = 18;
++          applyShield(id, 20); applyShield(`t${pState.team}_p2`, 20);
++        } else if (pState.role === 'yellow') {
++          cd = 12;
++          applyShield(id, 50);
++        } else if (pState.role === 'black') {
++          cd = 18;
++          const nearest = findNearestEnemy(5);
++          if (nearest) { applyDamage(nearest, 15 * dmgMult); applyStatus(nearest, 'freeze', 2); }
++        }
+         if (teamCards[pState.team] === 'cd_down') cd *= 0.7;
+         setPlayerCooldown(1, cd);
++        setVisualEffect('w');
+       } else if (key === 'e' && playerCooldowns[2] === 0) {
+-        // 技能3：瞬移闪现 (teleport 5m forward, CD 10s)
+-        if (bodyRef.current) {
+-          const pos = bodyRef.current.translation();
+-          const targetPos = {
+-            x: pos.x + playerDirRef.current.x * 5,
+-            y: pos.y,
+-            z: pos.z + playerDirRef.current.z * 5
+-          };
+-          bodyRef.current.setTranslation(targetPos, true);
++        let cd = 10;
++        if (pState.role === 'blue') {
++          if (bodyRef.current) {
++            const pos = bodyRef.current.translation();
++            bodyRef.current.setTranslation({ x: pos.x + playerDirRef.current.x * 5, y: pos.y, z: pos.z + playerDirRef.current.z * 5 }, true);
++          }
++        } else if (pState.role === 'red') {
++          cd = 20;
++          const pPos = playerPosRef.current;
++          Object.entries(arenaPositionsRef.current).forEach(([tid, tPosArr]) => {
++            if (tid === id || tid.startsWith(`t${pState.team}_`)) return;
++            if (pPos.distanceTo(new THREE.Vector3(...tPosArr)) < 5) applyStatus(tid, 'stun', 2);
++          });
++        } else if (pState.role === 'pink') {
++          cd = 15;
++          const pPos = playerPosRef.current;
++          Object.entries(arenaPositionsRef.current).forEach(([tid, tPosArr]) => {
++            if (tid === id || tid.startsWith(`t${pState.team}_`)) return;
++            if (pPos.distanceTo(new THREE.Vector3(...tPosArr)) < 8) applyStatus(tid, 'stun', 1.5);
++          });
++        } else if (pState.role === 'yellow') {
++          cd = 16;
++          applyHeal(id, 40);
++        } else if (pState.role === 'black') {
++          cd = 14;
++          const nearest = findNearestEnemy(5);
++          if (nearest) applyDamage(nearest, 40 * dmgMult);
+         }
+-        let cd = 10;
+         if (teamCards[pState.team] === 'cd_down') cd *= 0.7;
+         setPlayerCooldown(2, cd);
++        setVisualEffect('e');
+       }
+     };

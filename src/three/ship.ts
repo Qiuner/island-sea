@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { waveHeight } from './waves'
 import { glowTexture } from './sprites'
+import { SHIP_MOTION } from './ship-config'
 
 // 探险小帆船（冲奖版）：条纹帆布 + 三角旗 + 拉索 + 护舷板 + 甲板道具。
 // 造型原则：主角红船身是全场唯一高饱和红；细节讲"有人生活在这条船上"的故事
@@ -34,7 +35,8 @@ export class Ship {
   pos = new THREE.Vector3()
   heading = Math.PI // 朝 -z（北，群岛方向）
   speed = 0
-  readonly maxSpeed = 25
+  readonly cruiseSpeed = SHIP_MOTION.cruiseSpeed
+  readonly sprintSpeed = SHIP_MOTION.sprintSpeed
   private sail!: THREE.Mesh
   private pennant!: THREE.Mesh
   private arrowGroup = new THREE.Group()
@@ -43,6 +45,7 @@ export class Ship {
   private chestGlow!: THREE.Sprite
   private pitch = 0
   private roll = 0
+  private sprintK = 0
 
   constructor() {
     const hullRed = new THREE.MeshLambertMaterial({ color: '#b6452f', flatShading: true })
@@ -274,14 +277,21 @@ export class Ship {
 
   /**
    * @param throttle -1..1  @param steer -1(右)..1(左)
+   * @param sprintHeld 按住 Shift 时逐渐冲刺
    * @param speedCap 泊岸软减速上限
    */
-  update(dt: number, sim: number, throttle: number, steer: number, speedCap: number): void {
-    const accel = 14
-    const drag = 0.55
+  update(dt: number, sim: number, throttle: number, steer: number, sprintHeld: boolean, speedCap: number): void {
+    const sprintTarget = sprintHeld && throttle > 0 ? 1 : 0
+    const sprintRise = 1 - Math.exp(-1.9 * dt)
+    const sprintFall = 1 - Math.exp(-3.8 * dt)
+    this.sprintK += (sprintTarget - this.sprintK) * (sprintTarget > this.sprintK ? sprintRise : sprintFall)
+
+    const maxSpeed = THREE.MathUtils.lerp(this.cruiseSpeed, this.sprintSpeed, this.sprintK)
+    const accel = THREE.MathUtils.lerp(SHIP_MOTION.accelCruise, SHIP_MOTION.accelSprint, this.sprintK)
+    const drag = SHIP_MOTION.drag
     this.speed += (throttle * accel - drag * this.speed) * dt
-    this.speed = THREE.MathUtils.clamp(this.speed, -4, Math.min(this.maxSpeed, speedCap))
-    const turnGain = 0.35 + 0.65 * Math.min(Math.abs(this.speed) / this.maxSpeed, 1)
+    this.speed = THREE.MathUtils.clamp(this.speed, SHIP_MOTION.reverseSpeed, Math.min(maxSpeed, speedCap))
+    const turnGain = 0.35 + 0.65 * Math.min(Math.abs(this.speed) / maxSpeed, 1)
     this.heading += steer * 1.15 * turnGain * dt * (this.speed >= 0 ? 1 : -1)
 
     const fwd = this.forward
@@ -305,7 +315,7 @@ export class Ship {
     this.group.rotateZ(this.roll + steer * -0.06)
 
     // 帆随速度微鼓、三角旗飘动
-    const sailScale = 1 + Math.min(Math.abs(this.speed) / this.maxSpeed, 1) * 0.08
+    const sailScale = 1 + Math.min(Math.abs(this.speed) / maxSpeed, 1) * 0.08
     this.sail.scale.set(sailScale, 1, sailScale)
     this.pennant.rotation.y = Math.sin(sim * 5.5) * 0.45 + Math.sin(sim * 9.1) * 0.15
     this.chestGlow.material.opacity = 0.35 + 0.15 * Math.sin(sim * 2.4)

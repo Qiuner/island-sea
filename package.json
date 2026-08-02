@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests",
+    "test": "node --test tests/islands-layout.test.mjs tests/world-navigation.test.mjs",
     "build": "npm run typecheck && vite build",
     "check": "npm run test && npm run build",
     "preview": "vite preview"

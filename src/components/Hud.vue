@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { store, foundCount, discoverableCount, islandById } from '../store'
+import { store, foundCount, discoverableCount } from '../store'
 import { getWorld } from '../three/world'
 
 const TOD_ICON: Record<string, string> = { 白天: '☀️', 黄昏: '🌇', 夜晚: '🌙', 黎明: '🌅' }
 const todIcon = computed(() => TOD_ICON[store.todLabel] ?? '☀️')
-
-const dockedName = computed(() => (store.dockedId ? islandById(store.dockedId)?.name ?? '' : ''))
 
 const toastVisible = ref(false)
 const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost'
@@ -22,9 +20,6 @@ watch(
 
 function skipTime() {
   getWorld()?.skipTimeOfDay()
-}
-function doLand() {
-  getWorld()?.land()
 }
 function openAdmin() {
   window.location.href = adminUrl
@@ -50,12 +45,9 @@ function openAdmin() {
       <div v-if="toastVisible" class="toast" :key="store.toastKey">{{ store.toast }}</div>
     </transition>
 
-    <!-- 底部提示 / 登岛按钮 -->
+    <!-- 底部航行提示 -->
     <div class="hud-bottom">
-      <button v-if="store.mode === 'docked'" class="land-btn" @click="doLand">
-        🏝 点击「{{ dockedName }}」登岛 <kbd>Enter</kbd>
-      </button>
-      <div v-else-if="store.mode === 'sailing'" class="chip hint">
+      <div v-if="store.mode === 'sailing'" class="chip hint">
         <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> / 方向键 开船 · 点岛屿或小地图即可快速前往
       </div>
     </div>

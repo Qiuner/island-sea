@@ -6,13 +6,13 @@ import * as THREE from 'three'
 // 相机不随船头转，只随船平移 → 像俯瞰一张放在桌上的微缩玩具海。
 export const ISO_AZ = Math.PI * 0.25
 export const ISO_EL = (35 * Math.PI) / 180
-export const ISO_DIST = 520 // 机位要高过视野半高，否则地面在画面底部漏出背景
+export const ISO_DIST = 470 // 压低机位，让海面与岛屿更贴近镜头，但仍高过视野半高避免漏底
 export const ISO_DIR = new THREE.Vector3(
   Math.cos(ISO_EL) * Math.sin(ISO_AZ),
   Math.sin(ISO_EL),
   Math.cos(ISO_EL) * Math.cos(ISO_AZ),
 )
-export const FRUSTUM = 98 // 正交半高：跟随船俯瞰（越小越放大）
+export const FRUSTUM = 84 // 正交半高：跟随船俯瞰（越小越放大）
 
 export const DAY_CYCLE_SEC = 150 // 一整天流转的真实秒数
 

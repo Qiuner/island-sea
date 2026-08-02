@@ -51,7 +51,7 @@ GET /open/islands
 
 ## Docker 部署
 
-官网使用独立 Nginx 静态容器：
+官网主站使用独立 Nginx 静态容器；需要服务端 API 的孩子作品使用独立应用容器，并通过官网 Nginx 挂载到 `/works/**`：
 
 ```bash
 cp .env.example .env
@@ -66,6 +66,30 @@ BACKEND_URL=https://admin.example.com/prod-api
 ```
 
 浏览器请求 `/api/open/islands`，官网容器再反向代理到 `BACKEND_URL/open/islands`，因此浏览器侧不需要跨域配置。
+
+与后台部署在同一台生产服务器时，使用生产 Compose 让官网加入后台 Docker 网络，并只在宿主机回环地址暴露诊断端口：
+
+```bash
+IMAGE_TAG=2026.08.02.1 \
+IDEA_IMAGE_TAG=2026.08.02.1 \
+BACKEND_URL=http://app:8080 \
+ADMIN_NETWORK=future-maker-admin_future-maker-admin \
+docker compose -f deploy/docker-compose.prod.yml up -d --no-build
+```
+
+后台 Nginx 将 `/island/` 转发到官网容器，并仅将 `/api/open/islands` 转发到官网 API 代理。
+
+## 第一期作品
+
+`APortfolioOfWorks` 中的孩子作品随官网镜像一起发布：
+
+| 作品 | 类型 | 容器内路径 | 公网路径 |
+| --- | --- | --- | --- |
+| 星球派对：圆滚冒险 | React + Three.js/Vite，Docker 使用 Node.js 20 和 pnpm 9.4 构建 | `/works/planet-party/` | `/island/works/planet-party/` |
+| 全国 5A 景区探索地图 | 原生 HTML/CSS/JavaScript + ECharts | `/works/scenic-map/` | `/island/works/scenic-map/` |
+| IdeaPilot 想法明确工具 | Vinext + React 19 + Node.js 22，独立服务端容器调用 DeepSeek | `/works/idea-pilot/` | `/island/works/idea-pilot/` |
+
+作品 URL 由后台“官网岛屿”维护。新增需要编译的纯前端作品时，应在 Dockerfile 中增加独立构建阶段；需要服务端 API 的作品使用独立 Dockerfile 和 Compose 服务。纯静态作品只复制运行所需文件，不复制 `.git`、开发服务器或依赖目录。
 
 ## 验证钩子
 

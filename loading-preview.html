@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading Preview · Island Sea</title>
+  <style>
+    :root {
+      --ink: #f8f2e7;
+      --muted: rgba(248, 242, 231, 0.72);
+      --line: rgba(255, 243, 223, 0.16);
+      --shadow: rgba(5, 23, 40, 0.42);
+      --accent: #ffd189;
+      --serif: "Songti SC", "Noto Serif SC", "STSong", serif;
+      --sans: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #3a9ad9; }
+    body { font-family: var(--sans); color: var(--ink); }
+
+    #app {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 72% 42%, rgba(255,255,255,0.12), transparent 26%),
+        linear-gradient(180deg, #4ca3e3 0%, #76cdeb 52%, #63d5de 100%);
+    }
+
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .veil {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(3, 13, 24, 0.72) 0%, rgba(6, 18, 31, 0.62) 28%, rgba(10, 26, 41, 0.26) 46%, rgba(10, 26, 41, 0) 64%),
+        radial-gradient(circle at 18% 30%, rgba(255,255,255,0.08), transparent 24%);
+      pointer-events: none;
+    }
+
+    .panel {
+      position: absolute;
+      left: 5vw;
+      top: 0;
+      bottom: 0;
+      width: min(34vw, 500px);
+      min-width: 320px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 0;
+      z-index: 2;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      font-size: 12px;
+      letter-spacing: 0.52em;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-family: var(--serif);
+      font-size: clamp(44px, 5.4vw, 84px);
+      line-height: 0.98;
+      letter-spacing: 0.06em;
+      text-shadow: 0 8px 34px var(--shadow);
+    }
+
+    .tagline {
+      margin: 22px 0 0;
+      max-width: 14em;
+      font-size: clamp(15px, 1.4vw, 19px);
+      line-height: 1.9;
+      color: var(--muted);
+      text-shadow: 0 3px 18px rgba(5, 23, 40, 0.28);
+    }
+
+    .divider {
+      width: 84px;
+      height: 1px;
+      margin: 34px 0 28px;
+      background: linear-gradient(90deg, rgba(255,243,223,0.72), rgba(255,243,223,0));
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--ink);
+    }
+
+    .status-label {
+      font-size: 14px;
+      letter-spacing: 0.24em;
+      color: var(--muted);
+    }
+
+    .progress {
+      width: min(220px, 42vw);
+      height: 2px;
+      background: rgba(255, 243, 223, 0.18);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -24%;
+      width: 44%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255, 209, 137, 0), rgba(255, 209, 137, 0.9), rgba(255, 245, 222, 1));
+      box-shadow: 0 0 16px rgba(255, 209, 137, 0.4);
+      animation: glide 2.2s linear infinite;
+    }
+
+    .notes {
+      margin-top: 26px;
+      padding-left: 0;
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      font-size: 14px;
+      color: rgba(248, 242, 231, 0.58);
+    }
+
+    .notes li::before {
+      content: "·";
+      margin-right: 8px;
+      color: rgba(255, 209, 137, 0.78);
+    }
+
+    .frame {
+      position: absolute;
+      inset: 24px;
+      border: 1px solid var(--line);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .frame::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(255, 243, 223, 0.06);
+    }
+
+    .hint {
+      position: absolute;
+      right: 28px;
+      bottom: 24px;
+      z-index: 2;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      color: rgba(248, 242, 231, 0.42);
+    }
+
+    @keyframes glide {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(340%); }
+    }
+
+    @media (max-width: 900px) {
+      .panel {
+        width: min(56vw, 460px);
+        left: 20px;
+      }
+      .veil {
+        background: linear-gradient(180deg, rgba(5, 17, 28, 0.62) 0%, rgba(8, 22, 36, 0.48) 26%, rgba(8, 22, 36, 0.12) 54%, rgba(8, 22, 36, 0) 72%);
+      }
+      .hint { display: none; }
+    }
+
+    @media (max-width: 640px) {
+      .panel {
+        width: auto;
+        right: 20px;
+        min-width: 0;
+        justify-content: flex-end;
+        padding-bottom: 88px;
+      }
+      h1 { font-size: 42px; }
+      .tagline { max-width: none; font-size: 14px; }
+      .divider { margin: 24px 0 18px; }
+      .notes { display: none; }
+      .frame { inset: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="scene"></canvas>
+    <div class="veil"></div>
+    <div class="frame"></div>
+    <section class="panel">
+      <p class="eyebrow">ISLAND SEA</p>
+      <h1>造物群岛</h1>
+      <p class="tagline">海面正在为新的岛屿让路。每个孩子的作品，都会在这里长成一座岛。</p>
+      <div class="divider"></div>
+      <div class="status">
+        <span class="status-label">启航中</span>
+        <div class="progress"></div>
+      </div>
+      <ul class="notes">
+        <li>船停在岛边，像是准备登岸的前一秒</li>
+        <li>左边是文案区，右边直接展示项目自己的建模场景</li>
+        <li>这是独立预览页，不会改动当前正式加载页</li>
+      </ul>
+    </section>
+    <div class="hint">loading-preview.html</div>
+  </div>
+  <script type="module" src="/src/loading-preview.ts"></script>
+</body>
+</html>

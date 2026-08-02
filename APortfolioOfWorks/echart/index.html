@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>全国 5A 景区探索地图</title>
+    <link rel="stylesheet" href="css/index.css" />
+  </head>
+
+  <body>
+    <section class="mainbox">
+      <div class="column">
+        <div class="map">
+          <div class="map-toolbar">
+            <button class="map-back" type="button">返回上一级</button>
+            <button class="map-lottery-region" type="button">随机城市</button>
+            <button class="map-lottery-spot" type="button">随机景点</button>
+            <div class="map-breadcrumb">全国</div>
+            <div class="map-result">点击按钮开始随机选择</div>
+          </div>
+          <div class="scenic-card scenic-card-hidden">
+            <button class="scenic-card-close" type="button">关闭</button>
+            <div class="scenic-card-media">
+              <img class="scenic-card-image" alt="景区图片" />
+            </div>
+            <div class="scenic-card-body">
+              <h3 class="scenic-card-title">请选择景区</h3>
+              <div class="scenic-card-meta"></div>
+              <p class="scenic-card-desc">点击地图上的小黄点查看景区图片和简介。</p>
+            </div>
+          </div>
+          <div class="chart"></div>
+          <div class="map1"></div>
+          <div class="map2"></div>
+          <div class="map3"></div>
+        </div>
+      </div>
+    </section>
+    <script src="js/flexible.js"></script>
+    <script src="js/jquery.js"></script>
+    <script src="js/echarts.min.js"></script>
+    <script src="js/index.js"></script>
+    <script src="js/national-5a-spots.js"></script>
+    <script src="js/myMap.js"></script>
+  </body>
+</html>

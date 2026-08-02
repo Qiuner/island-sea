@@ -5,27 +5,212 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>造物群岛 · 每个孩子都是一座岛</title>
   <style>
+    :root {
+      --loading-ink: #f8f2e7;
+      --loading-muted: rgba(248, 242, 231, 0.72);
+      --loading-line: rgba(255, 243, 223, 0.14);
+      --loading-shadow: rgba(5, 23, 40, 0.42);
+      --loading-accent: #ffd189;
+    }
     /* 防首帧闪色：底色 = 泻湖海色 */
     html, body { margin: 0; padding: 0; background: #1a9db4; }
+    body { overflow: hidden; }
     #loading {
       position: fixed; inset: 0; z-index: 99;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      background: linear-gradient(180deg, #2f97e6 0%, #a5e8ec 55%, #2fd0cf 100%);
-      color: #ffffff; font-family: "Songti SC", "Noto Serif SC", serif;
-      transition: opacity 0.9s ease; letter-spacing: 0.35em;
-      text-shadow: 0 2px 10px rgba(20, 80, 100, 0.4);
+      color: var(--loading-ink);
+      font-family: "Songti SC", "Noto Serif SC", serif;
+      background:
+        radial-gradient(circle at 72% 42%, rgba(255,255,255,0.12), transparent 26%),
+        linear-gradient(180deg, #4ca3e3 0%, #76cdeb 52%, #63d5de 100%);
+      transition: opacity 0.9s ease;
+      overflow: hidden;
     }
-    #loading .boat { font-size: 42px; animation: bob 2.4s ease-in-out infinite; letter-spacing: 0; }
-    #loading p { font-size: 15px; margin-top: 18px; opacity: 0.85; }
-    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-10px) rotate(3deg); } }
+    #loading canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    #loading .veil {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(3, 13, 24, 0.72) 0%, rgba(6, 18, 31, 0.62) 28%, rgba(10, 26, 41, 0.26) 46%, rgba(10, 26, 41, 0) 64%),
+        radial-gradient(circle at 18% 30%, rgba(255,255,255,0.08), transparent 24%);
+      pointer-events: none;
+    }
+    #loading .panel {
+      position: absolute;
+      left: 5vw;
+      top: 0;
+      bottom: 0;
+      width: min(28vw, 380px);
+      min-width: 280px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 40px 0;
+      z-index: 2;
+    }
+    #loading .eyebrow {
+      margin: 0 0 12px;
+      font-size: 11px;
+      letter-spacing: 0.32em;
+      color: rgba(248, 242, 231, 0.54);
+      text-transform: uppercase;
+    }
+    #loading h1 {
+      margin: 0;
+      font-size: clamp(30px, 3.8vw, 54px);
+      line-height: 1.02;
+      letter-spacing: 0.1em;
+      text-shadow: 0 6px 26px var(--loading-shadow);
+    }
+    #loading .loading-subtitle {
+      margin: 10px 0 0;
+      max-width: 18em;
+      font-size: 13px;
+      line-height: 1.75;
+      color: rgba(248, 242, 231, 0.56);
+      text-shadow: 0 3px 18px rgba(5, 23, 40, 0.28);
+    }
+    #loading .divider {
+      width: 62px;
+      height: 1px;
+      margin: 20px 0 18px;
+      background: linear-gradient(90deg, rgba(255,243,223,0.42), rgba(255,243,223,0));
+    }
+    #loading .status {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    #loading .loading-status {
+      font-size: 13px;
+      letter-spacing: 0.2em;
+      color: rgba(248, 242, 231, 0.84);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #loading .loading-status::after {
+      content: "";
+      width: 26px;
+      height: 6px;
+      background:
+        radial-gradient(circle, rgba(255,245,222,0.95) 0 42%, transparent 48%) 0 50% / 6px 6px no-repeat,
+        radial-gradient(circle, rgba(255,245,222,0.72) 0 42%, transparent 48%) 10px 50% / 6px 6px no-repeat,
+        radial-gradient(circle, rgba(255,245,222,0.4) 0 42%, transparent 48%) 20px 50% / 6px 6px no-repeat;
+      animation: loading-pulse 1.2s ease-in-out infinite;
+    }
+    #loading .loading-progress {
+      width: min(160px, 36vw);
+      height: 2px;
+      background: rgba(255, 243, 223, 0.18);
+      overflow: hidden;
+      position: relative;
+    }
+    #loading .loading-progress::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: -24%;
+      width: 44%;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255, 209, 137, 0), rgba(255, 209, 137, 0.9), rgba(255, 245, 222, 1));
+      box-shadow: 0 0 16px rgba(255, 209, 137, 0.4);
+      animation: loading-glide 2.2s linear infinite;
+    }
+    #loading .frame {
+      position: absolute;
+      inset: 24px;
+      border: 1px solid var(--loading-line);
+      pointer-events: none;
+      z-index: 1;
+    }
+    #loading .frame::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border: 1px solid rgba(255, 243, 223, 0.06);
+    }
+    #loading .hint {
+      position: absolute;
+      right: 28px;
+      bottom: 24px;
+      z-index: 2;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      color: rgba(248, 242, 231, 0.24);
+    }
+    #loading[data-failed="1"] .veil {
+      background:
+        linear-gradient(90deg, rgba(18, 16, 27, 0.84) 0%, rgba(23, 20, 33, 0.74) 34%, rgba(23, 20, 33, 0.34) 56%, rgba(23, 20, 33, 0.06) 72%),
+        radial-gradient(circle at 18% 30%, rgba(255,255,255,0.04), transparent 24%);
+    }
+    #loading[data-failed="1"] .loading-progress::after {
+      animation: none;
+      left: 0;
+      width: 42%;
+    }
+    @keyframes loading-glide {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(340%); }
+    }
+    @keyframes loading-pulse {
+      0%, 100% { opacity: 0.72; transform: translateX(0); }
+      50% { opacity: 1; transform: translateX(2px); }
+    }
+    @media (max-width: 900px) {
+      #loading .panel {
+        width: min(54vw, 360px);
+        left: 20px;
+      }
+      #loading .veil {
+        background: linear-gradient(180deg, rgba(5, 17, 28, 0.62) 0%, rgba(8, 22, 36, 0.48) 26%, rgba(8, 22, 36, 0.12) 54%, rgba(8, 22, 36, 0) 72%);
+      }
+      #loading .hint { display: none; }
+    }
+    @media (max-width: 640px) {
+      #loading .panel {
+        width: auto;
+        right: 20px;
+        min-width: 0;
+        justify-content: flex-end;
+        padding-bottom: 88px;
+      }
+      #loading h1 { font-size: 34px; }
+      #loading .loading-subtitle { max-width: none; font-size: 13px; }
+      #loading .divider { margin: 18px 0 14px; }
+      #loading .frame { inset: 12px; }
+    }
+    #loading[data-failed="1"] .loading-subtitle {
+      font-size: 14px;
+      max-width: 18em;
+    }
   </style>
 </head>
 <body>
   <div id="loading">
-    <div class="boat">⛵</div>
-    <p>正在扬帆……</p>
+    <canvas id="loading-scene"></canvas>
+    <div class="veil"></div>
+    <div class="frame"></div>
+    <section class="panel">
+      <p class="eyebrow">Loading</p>
+      <h1>造物群岛</h1>
+      <p class="loading-subtitle" data-role="subtitle">正在把群岛、海面和小船一并升起来。</p>
+      <div class="divider"></div>
+      <div class="status">
+        <span class="loading-status" data-role="status">启航中</span>
+        <div class="loading-progress" aria-hidden="true"></div>
+      </div>
+    </section>
+    <div class="hint">Island Sea</div>
   </div>
   <div id="app"></div>
+  <script type="module" src="/src/loading-screen.ts"></script>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

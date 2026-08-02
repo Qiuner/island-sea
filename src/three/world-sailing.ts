@@ -46,6 +46,9 @@ export function updateSailing(ctx: SailingContext): SailingResult {
     }
 
     ctx.navigation.tryDockCandidate(def, obj, d, ctx.sim)
+    if (store.mode !== 'sailing') {
+      break
+    }
     if (st === 'foggy') {
       continue
     }

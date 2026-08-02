@@ -1,0 +1,27 @@
+services:
+  idea-pilot:
+    image: island-sea/idea-pilot:${IDEA_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-v4-flash}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+    networks:
+      - admin
+
+  island-web:
+    image: island-sea/web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    environment:
+      BACKEND_URL: ${BACKEND_URL:-http://app:8080}
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-5176}:80"
+    depends_on:
+      - idea-pilot
+    networks:
+      - admin
+
+networks:
+  admin:
+    external: true
+    name: ${ADMIN_NETWORK:-future-maker-admin_future-maker-admin}

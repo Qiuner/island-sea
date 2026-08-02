@@ -1,0 +1,14 @@
+{
+  "plugins": [],
+  "categories": {
+    "correctness": "off"
+  },
+  "jsPlugins": [
+    "./.rules/check-image-import-plugin.ts",
+    "./.rules/check-style-import-plugin.ts"
+  ],
+  "rules": {
+    "check-image-exists/no-missing-image": "error",
+    "check-style-exists/no-missing-style": "error"
+  }
+}
