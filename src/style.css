@@ -187,20 +187,21 @@ kbd {
   width: 292px;
   margin-top: 8px;
   padding: 10px;
-  color: var(--ink2);
-  background: rgba(248, 250, 242, 0.8);
-  border: 1px solid rgba(255, 250, 242, 0.52);
+  color: var(--ink);
+  background: rgba(29, 104, 116, 0.9);
+  border: 1px solid rgba(253, 243, 221, 0.18);
+  border-left: 3px solid var(--gold);
   border-radius: 8px;
-  box-shadow: 0 14px 34px rgba(20, 74, 82, 0.24);
-  backdrop-filter: blur(14px) saturate(1.15);
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  box-shadow: 0 14px 34px rgba(18, 71, 82, 0.32);
+  backdrop-filter: blur(12px) saturate(1.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.12);
 }
 .list-search-wrap {
   display: grid;
   gap: 5px;
 }
 .list-search-wrap span {
-  color: var(--gold2);
+  color: #ffd166;
   font-size: 11px;
   font-weight: 700;
 }
@@ -208,19 +209,19 @@ kbd {
   width: 100%;
   min-height: 38px;
   box-sizing: border-box;
-  border: 1px solid rgba(158, 131, 92, 0.28);
-  background: rgba(255, 255, 255, 0.48);
-  color: var(--ink2);
+  border: 1px solid rgba(253, 243, 221, 0.24);
+  background: rgba(253, 243, 221, 0.14);
+  color: var(--ink);
   border-radius: 6px;
   padding: 8px 11px;
   font-size: 13.5px;
   font-family: var(--sans);
   outline: none;
 }
-.list-search::placeholder { color: rgba(74, 58, 43, 0.5); }
+.list-search::placeholder { color: rgba(253, 243, 221, 0.58); }
 .list-search:focus {
-  border-color: rgba(185, 119, 42, 0.58);
-  box-shadow: 0 0 0 3px rgba(244, 197, 97, 0.16);
+  border-color: rgba(255, 209, 102, 0.74);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.14);
 }
 .list-scroll {
   max-height: 318px;
@@ -231,12 +232,12 @@ kbd {
   flex-direction: column;
   gap: 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(74, 58, 43, 0.34) transparent;
+  scrollbar-color: rgba(253, 243, 221, 0.4) transparent;
 }
 .list-scroll::-webkit-scrollbar { width: 5px; }
 .list-scroll::-webkit-scrollbar-track { background: transparent; }
 .list-scroll::-webkit-scrollbar-thumb {
-  background: rgba(74, 58, 43, 0.3);
+  background: rgba(253, 243, 221, 0.34);
   border-radius: 999px;
 }
 .list-row {
@@ -247,10 +248,10 @@ kbd {
   width: 100%;
   min-height: 46px;
   text-align: left;
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid transparent;
+  background: rgba(253, 243, 221, 0.1);
+  border: 1px solid rgba(253, 243, 221, 0.08);
   cursor: pointer;
-  color: var(--ink2);
+  color: var(--ink);
   padding: 8px 9px;
   border-radius: 6px;
   font-family: inherit;
@@ -258,14 +259,14 @@ kbd {
   transition: background 0.15s, border-color 0.15s, transform 0.15s;
 }
 .list-row:hover {
-  background: rgba(255, 250, 242, 0.72);
-  border-color: rgba(185, 119, 42, 0.2);
+  background: rgba(253, 243, 221, 0.18);
+  border-color: rgba(255, 209, 102, 0.28);
   transform: translateX(2px);
 }
 .list-row.is-foggy { cursor: default; opacity: 0.5; }
 .list-row.is-foggy:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: transparent;
+  background: rgba(253, 243, 221, 0.1);
+  border-color: rgba(253, 243, 221, 0.08);
   transform: none;
 }
 .list-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
@@ -283,7 +284,7 @@ kbd {
 }
 .list-row .by {
   overflow: hidden;
-  opacity: 0.62;
+  color: rgba(253, 243, 221, 0.68);
   font-size: 12px;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -294,12 +295,12 @@ kbd {
   align-items: center;
   justify-content: center;
   min-width: 38px;
-  color: var(--gold2);
+  color: #ffd166;
   font-size: 11.5px;
   font-weight: 800;
 }
-.list-row.is-foggy .st { color: var(--ink2); }
-.empty { padding: 12px; text-align: center; font-size: 13px; opacity: 0.6; }
+.list-row.is-foggy .st { color: rgba(253, 243, 221, 0.68); }
+.empty { padding: 12px; text-align: center; font-size: 13px; color: rgba(253, 243, 221, 0.68); }
 
 /* ---------- mobile sailing controls ---------- */
 .mobile-controls {
