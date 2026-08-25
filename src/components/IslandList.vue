@@ -3,12 +3,12 @@ import { ref, computed } from 'vue'
 import { statusOf, store } from '../store'
 import { getWorld } from '../three/world'
 
-// 岛屿名录：按孩子名/岛名搜索，点一下即快速前往那座岛（解决 30 个无标签圆点难找人的问题）。
+// 岛屿名录：按孩子名/岛名搜索，点一下直接打开对应作品入口。
 const open = ref(true)
 const q = ref('')
 
 const STATUS_DOT: Record<string, string> = { foggy: '#9aa6b4', locked: '#e0a53a', visited: '#5aa86a' }
-const STATUS_TXT: Record<string, string> = { foggy: '二期待启航', locked: '待寻获', visited: '已寻获' }
+const STATUS_TXT: Record<string, string> = { foggy: '待开放', locked: '打开', visited: '打开' }
 
 const list = computed(() => {
   const kw = q.value.trim().toLowerCase()
@@ -17,6 +17,7 @@ const list = computed(() => {
     name: i.name,
     builder: i.builder,
     status: statusOf(i),
+    projectUrl: i.projects[0]?.url,
     projectNames: i.projects.map(project => project.name).join(' '),
   })).filter((i) => {
     if (!kw) return true
@@ -25,8 +26,12 @@ const list = computed(() => {
 })
 
 function go(id: string, status: string) {
+  const island = list.value.find(item => item.id === id)
+  if (status !== 'foggy' && island?.projectUrl) {
+    window.open(island.projectUrl, '_blank', 'noopener,noreferrer')
+    return
+  }
   getWorld()?.fastTravelTo(id)
-  if (status !== 'foggy') open.value = false
 }
 </script>
 
@@ -54,8 +59,10 @@ function go(id: string, status: string) {
             @click="go(it.id, it.status)"
           >
             <span class="dot" :style="{ background: STATUS_DOT[it.status] }"></span>
-            <span class="nm">{{ it.name }}</span>
-            <span class="by">{{ it.builder }}</span>
+            <span class="list-main">
+              <span class="nm">{{ it.name }}</span>
+              <span class="by">{{ it.builder }}</span>
+            </span>
             <span class="st">{{ STATUS_TXT[it.status] }}</span>
           </button>
           <div v-if="!list.length" class="empty">没找到这个孩子的岛</div>
