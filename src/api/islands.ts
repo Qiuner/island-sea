@@ -20,7 +20,20 @@ function isTheme(value: unknown): value is IslandSource['theme'] {
 
 function normalizeMediaUrl(value: string): string {
   const url = value.trim()
+  if (url.startsWith('/island/camp-photos/')) return url.replace(/^\/island/, '')
   return url.startsWith('/profile/') ? `${API_BASE_URL}${url}` : url
+}
+
+function normalizeProjectUrl(value: string): string {
+  const url = value.trim()
+  if (url.startsWith('https://fmlab.vip/island/works/')) {
+    return url.replace('https://fmlab.vip/island/works/', 'https://island.fmlab.vip/works/')
+  }
+  if (url.startsWith('https://island.fmlab.vip/island/works/')) {
+    return url.replace('https://island.fmlab.vip/island/works/', 'https://island.fmlab.vip/works/')
+  }
+  if (url.startsWith('/island/works/')) return url.replace(/^\/island/, '')
+  return url
 }
 
 function withDevelopmentPhotos(islands: IslandDef[]): IslandDef[] {
@@ -62,11 +75,12 @@ function normalizeSources(value: unknown): IslandSource[] {
           ) {
             return []
           }
+          const projectUrl = normalizeProjectUrl(entry.url)
           return [{
             id: entry.id,
             name: entry.name,
-            url: entry.url,
-            cover: typeof entry.cover === 'string' ? entry.cover : projectPreviewFor(entry.url),
+            url: projectUrl,
+            cover: typeof entry.cover === 'string' ? normalizeMediaUrl(entry.cover) : projectPreviewFor(projectUrl),
           }]
         })
       : []

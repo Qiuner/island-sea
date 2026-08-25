@@ -188,7 +188,7 @@ export function updateLabel(
   dt: number,
   easeOutBack: (t: number) => number,
 ): number {
-  const wantLabel = status === 'visited' && !suppressLabel ? 1 : 0
+  const wantLabel = status !== 'foggy' && !suppressLabel ? 1 : 0
   let nextLabelShown = labelShown
 
   if (wantLabel > nextLabelShown && unlockStart >= 0) {

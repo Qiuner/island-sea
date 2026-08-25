@@ -6,6 +6,7 @@ import Hud from './components/Hud.vue'
 import Minimap from './components/Minimap.vue'
 import IslandList from './components/IslandList.vue'
 import IslandPanel from './components/IslandPanel.vue'
+import MobileControls from './components/MobileControls.vue'
 import { islandById, setIslands, store } from './store'
 
 const glCanvas = ref<HTMLCanvasElement | null>(null)
@@ -46,6 +47,7 @@ onMounted(async () => {
       <Hud />
       <IslandList v-if="store.mode !== 'landed'" />
       <Minimap v-if="store.mode !== 'landed'" />
+      <MobileControls v-if="store.mode !== 'landed'" />
       <IslandPanel v-if="store.mode === 'landed'" />
       <div v-if="empty" class="empty-world">海面正在等待第一座岛</div>
     </template>

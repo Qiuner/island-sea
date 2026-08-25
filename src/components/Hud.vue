@@ -3,11 +3,10 @@ import { computed, ref, watch } from 'vue'
 import { store, foundCount, discoverableCount } from '../store'
 import { getWorld } from '../three/world'
 
-const TOD_ICON: Record<string, string> = { 白天: '☀️', 黄昏: '🌇', 夜晚: '🌙', 黎明: '🌅' }
-const todIcon = computed(() => TOD_ICON[store.todLabel] ?? '☀️')
-
 const toastVisible = ref(false)
-const adminUrl = import.meta.env.VITE_ADMIN_URL || 'http://localhost'
+const adminUrl = import.meta.env.VITE_ADMIN_URL || 'https://fmlab.vip/login'
+const paddedFoundCount = computed(() => String(foundCount.value).padStart(2, '0'))
+const paddedDiscoverableCount = computed(() => String(discoverableCount.value).padStart(2, '0'))
 let toastTimer: ReturnType<typeof setTimeout> | null = null
 watch(
   () => store.toastKey,
@@ -30,13 +29,23 @@ function openAdmin() {
   <div class="hud">
     <!-- 顶部 -->
     <div class="hud-top">
-      <div class="chip progress">🏝 已寻获 <b>{{ foundCount }}</b> / {{ discoverableCount }} 座岛</div>
+      <div class="hud-card progress-card">
+        <span class="card-kicker">航线记录</span>
+        <span class="card-value"><b>{{ paddedFoundCount }}</b> / {{ paddedDiscoverableCount }}</span>
+      </div>
       <div class="wordmark">造物群岛<span>每个孩子都是一座岛</span></div>
       <div class="hud-actions">
-        <button class="chip btn" @click="skipTime" title="时间随现实自然流转 · 点击跳到下一个时段">
-          {{ todIcon }} {{ store.todLabel }}
+        <button class="hud-card hud-button time-card" @click="skipTime" title="时间随现实自然流转 · 点击跳到下一个时段">
+          <span class="card-kicker">当前天色</span>
+          <span class="card-row">
+            <strong>{{ store.todLabel }}</strong>
+            <em>切换</em>
+          </span>
         </button>
-        <button class="chip btn admin-entry" @click="openAdmin">管理登录</button>
+        <button class="hud-card hud-button admin-entry" @click="openAdmin">
+          <span class="card-kicker">管理入口</span>
+          <span class="card-row"><strong>登录</strong></span>
+        </button>
       </div>
     </div>
 

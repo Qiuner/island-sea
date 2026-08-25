@@ -86,7 +86,7 @@ export class WorldNavigation {
     if (statusOf(def) === 'locked') {
       this.unlockIsland(def, this.getSimTime())
     } else {
-      showToast(`⛵ 已抵达「${def.name}」`)
+      showToast(`已抵达「${def.name}」`)
     }
     this.land()
   }
@@ -100,7 +100,7 @@ export class WorldNavigation {
     }
     this.manualTargetId = id
     store.targetId = id
-    showToast(`🧭 目标已设为「${def.name}」`)
+    showToast(`目标已设为「${def.name}」`)
   }
 
   pickAutoTarget(islandDefs: IslandDef[], shipPos: THREE.Vector3): void {
@@ -180,6 +180,6 @@ export class WorldNavigation {
     markVisited(def.id)
     obj.playUnlock(sim)
     this.spawnUnlockRing(def.position[0], def.position[1], sim)
-    showToast(`✨ 寻获「${def.name}」！已寻获 ${foundCount.value} / ${discoverableCount.value} 座岛`)
+    showToast(`寻获「${def.name}」！已寻获 ${foundCount.value} / ${discoverableCount.value} 座岛`)
   }
 }

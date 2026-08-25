@@ -28,6 +28,9 @@ export class WorldControls {
   private readonly keys = new Set<string>()
   private readonly raycaster = new THREE.Raycaster()
   private readonly pointerNdc = new THREE.Vector2()
+  private touchThrottle = 0
+  private touchSteer = 0
+  private touchSprint = false
 
   constructor(deps: WorldControlsDeps) {
     this.canvas = deps.canvas
@@ -62,17 +65,27 @@ export class WorldControls {
     this.keys.clear()
   }
 
+  setTouchMovement(throttle: number, steer: number, sprint = false): void {
+    this.touchThrottle = THREE.MathUtils.clamp(throttle, -0.6, 1)
+    this.touchSteer = THREE.MathUtils.clamp(steer, -1, 1)
+    this.touchSprint = sprint
+  }
+
   movement(canSail: boolean): { throttle: number; steer: number; sprint: boolean } {
     if (!canSail) {
       return { throttle: 0, steer: 0, sprint: false }
     }
-    let throttle = 0
-    let steer = 0
+    let throttle = this.touchThrottle
+    let steer = this.touchSteer
     if (this.keys.has('w') || this.keys.has('arrowup')) throttle += 1
     if (this.keys.has('s') || this.keys.has('arrowdown')) throttle -= 0.6
     if (this.keys.has('a') || this.keys.has('arrowleft')) steer += 1
     if (this.keys.has('d') || this.keys.has('arrowright')) steer -= 1
-    return { throttle, steer, sprint: this.keys.has('shift') }
+    return {
+      throttle: THREE.MathUtils.clamp(throttle, -0.6, 1),
+      steer: THREE.MathUtils.clamp(steer, -1, 1),
+      sprint: this.keys.has('shift') || this.touchSprint,
+    }
   }
 
   private onKeyDown = (e: KeyboardEvent): void => {
@@ -89,10 +102,14 @@ export class WorldControls {
 
   private onBlur = (): void => {
     this.keys.clear()
+    this.setTouchMovement(0, 0, false)
   }
 
   private onVisibility = (): void => {
-    if (document.hidden) this.keys.clear()
+    if (document.hidden) {
+      this.keys.clear()
+      this.setTouchMovement(0, 0, false)
+    }
   }
 
   private onCanvasClick = (e: MouseEvent): void => {

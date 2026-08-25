@@ -8,7 +8,7 @@ RUN npm ci
 COPY . .
 
 ARG VITE_API_BASE_URL=/api
-ARG VITE_ADMIN_URL=http://localhost
+ARG VITE_ADMIN_URL=https://fmlab.vip/login
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 ENV VITE_ADMIN_URL=${VITE_ADMIN_URL}
 

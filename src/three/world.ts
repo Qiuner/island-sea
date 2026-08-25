@@ -340,6 +340,10 @@ export class World {
     this.controls.clearKeys()
   }
 
+  setTouchMovement(throttle: number, steer: number, sprint = false): void {
+    this.controls.setTouchMovement(throttle, steer, sprint)
+  }
+
   /** Hud 点击：平滑过渡到下一个时段（委托给 TimeOfDay） */
   skipTimeOfDay(): void {
     this.tod.skip()
@@ -474,7 +478,7 @@ export class World {
         const obj = this.islands.get(id)!
         obj.grow(sim)
         this.rings.spawn(def.position[0], def.position[1], sim, '#bfeee2')
-        showToast(`🌱 「${def.name}」正在从迷雾中升起——${def.builder}的作品完成了！`)
+        showToast(`「${def.name}」正在从迷雾中升起——${def.builder}的作品完成了！`)
         obj.onGrown = () => {
           store.pendingGrow.delete(id)
         }

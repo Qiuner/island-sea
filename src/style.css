@@ -22,7 +22,7 @@ body { font-family: var(--sans); color: var(--ink); }
   position: absolute; top: 18px; left: 20px; right: 20px;
   display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
 }
-.hud-actions { display: flex; align-items: center; gap: 8px; pointer-events: auto; }
+.hud-actions { display: flex; align-items: flex-start; gap: 10px; pointer-events: auto; }
 .admin-entry { white-space: nowrap; }
 .wordmark {
   font-family: var(--serif); font-size: 20px; letter-spacing: 0.42em;
@@ -43,6 +43,80 @@ body { font-family: var(--sans); color: var(--ink); }
 .chip b { color: var(--gold2); font-size: 15px; }
 .chip.btn { cursor: pointer; transition: border-color 0.2s, transform 0.15s; font-family: inherit; }
 .chip.btn:hover { border-color: var(--gold2); transform: translateY(-1px); }
+
+.hud-card {
+  pointer-events: auto;
+  min-width: 126px;
+  min-height: 74px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px 18px;
+  border: 0;
+  border-left: 3px solid var(--gold);
+  border-radius: 3px;
+  background: rgba(29, 104, 116, 0.9);
+  color: var(--ink);
+  box-shadow: 0 12px 30px rgba(18, 71, 82, 0.28);
+  backdrop-filter: blur(10px) saturate(1.12);
+  -webkit-backdrop-filter: blur(10px) saturate(1.12);
+  font-family: var(--sans);
+  text-align: left;
+}
+.hud-button {
+  cursor: pointer;
+  transition: background-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+.hud-button:hover,
+.hud-button:focus-visible {
+  background: rgba(24, 88, 100, 0.96);
+  box-shadow: 0 14px 34px rgba(18, 71, 82, 0.36);
+  transform: translateY(-1px);
+  outline: none;
+}
+.card-kicker {
+  display: block;
+  color: rgba(253, 243, 221, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+.card-value {
+  display: block;
+  color: rgba(253, 243, 221, 0.82);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+.card-value b {
+  color: #ffd166;
+  font-size: 25px;
+  letter-spacing: 0.04em;
+}
+.card-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  line-height: 1;
+}
+.card-row strong,
+.finder-btn strong {
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.card-row em {
+  color: #ffd166;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+.time-card { min-width: 150px; }
+.admin-entry { min-width: 118px; }
 
 kbd {
   display: inline-block; min-width: 16px; text-align: center;
@@ -72,13 +146,56 @@ kbd {
 .toast-leave-to { opacity: 0; transform: translateX(-50%) translateY(-8px); }
 
 /* ---------- 岛屿名录（按名字找岛） ---------- */
-.island-list { position: absolute; top: 64px; left: 20px; pointer-events: none; }
-.finder-btn { pointer-events: auto; }
+.island-list { position: absolute; top: 102px; left: 20px; pointer-events: none; }
+.finder-btn {
+  pointer-events: auto;
+  min-width: 150px;
+  min-height: 70px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+}
+.nav-mark {
+  position: relative;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  border: 1px solid rgba(253, 243, 221, 0.42);
+  transform: rotate(45deg);
+}
+.nav-mark::before,
+.nav-mark::after {
+  position: absolute;
+  content: "";
+  background: #ffd166;
+}
+.nav-mark::before {
+  top: 12px;
+  left: 4px;
+  width: 18px;
+  height: 1px;
+}
+.nav-mark::after {
+  top: 4px;
+  left: 12px;
+  width: 1px;
+  height: 18px;
+}
 .list-panel {
   pointer-events: auto; margin-top: 8px; width: 250px;
   background: var(--glass); border: 1px solid var(--glass-line); color: var(--ink2);
   backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
   border-radius: 16px; padding: 10px; box-shadow: 0 14px 40px rgba(120, 90, 55, 0.28);
+}
+.list-search-wrap {
+  display: grid;
+  gap: 5px;
+}
+.list-search-wrap span {
+  color: var(--gold2);
+  font-size: 11px;
+  font-weight: 700;
 }
 .list-search {
   width: 100%; box-sizing: border-box; border: 1px solid var(--glass-line);
@@ -102,6 +219,71 @@ kbd {
 .list-row .st { margin-left: auto; font-size: 11.5px; opacity: 0.65; color: var(--gold2); }
 .list-row.is-foggy .st { color: var(--ink2); }
 .empty { padding: 12px; text-align: center; font-size: 13px; opacity: 0.6; }
+
+/* ---------- mobile sailing controls ---------- */
+.mobile-controls {
+  position: absolute;
+  left: max(14px, env(safe-area-inset-left));
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 18;
+  display: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.direction-pad {
+  display: grid;
+  width: 128px;
+  height: 128px;
+  padding: 8px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  pointer-events: auto;
+  border: 1px solid rgba(253, 243, 221, 0.22);
+  border-radius: 999px;
+  background: rgba(24, 88, 100, 0.46);
+  box-shadow: 0 14px 34px rgba(6, 24, 30, 0.28);
+  backdrop-filter: blur(12px) saturate(1.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.12);
+}
+.direction-button,
+.sprint-control {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink);
+  background: rgba(253, 243, 221, 0.18);
+  border: 1px solid rgba(253, 243, 221, 0.26);
+  border-radius: 999px;
+  font: 800 19px/1 var(--sans);
+  touch-action: none;
+  user-select: none;
+}
+.direction-button:active,
+.sprint-control:active {
+  background: rgba(244, 197, 97, 0.34);
+  border-color: rgba(244, 197, 97, 0.72);
+}
+.direction-center {
+  align-self: center;
+  justify-self: center;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(253, 243, 221, 0.54);
+}
+.sprint-control {
+  width: 62px;
+  height: 62px;
+  pointer-events: auto;
+  color: #4a3a2b;
+  background: rgba(244, 197, 97, 0.86);
+  box-shadow: 0 14px 34px rgba(6, 24, 30, 0.26);
+  font-size: 18px;
+}
 
 /* ---------- 小地图 ---------- */
 .minimap {
@@ -531,7 +713,26 @@ kbd {
     flex-direction: column; align-items: flex-end;
   }
   .chip { padding: 7px 11px; font-size: 12px; }
-  .island-list { top: 58px; left: 12px; }
+  .hud-card {
+    min-width: 96px;
+    min-height: 56px;
+    padding: 10px 12px;
+  }
+  .card-kicker { font-size: 10px; }
+  .card-value b { font-size: 20px; }
+  .card-row strong,
+  .finder-btn strong { font-size: 15px; }
+  .time-card,
+  .admin-entry { min-width: 96px; }
+  .island-list { top: 76px; left: 12px; }
+  .finder-btn {
+    min-width: 116px;
+    min-height: 54px;
+    gap: 10px;
+  }
+  .nav-mark { width: 20px; height: 20px; }
+  .nav-mark::before { top: 9px; left: 3px; width: 14px; }
+  .nav-mark::after { top: 3px; left: 9px; height: 14px; }
   .hud-bottom { bottom: 12px; padding: 0 12px; }
   .hint {
     max-width: calc(100vw - 24px);
@@ -541,7 +742,13 @@ kbd {
   .minimap {
     --minimap-size: min(38vw, 150px);
     right: 8px;
-    bottom: 62px;
+    bottom: 150px;
+  }
+  .list-panel {
+    width: min(280px, calc(100vw - 24px));
+  }
+  .list-scroll {
+    max-height: min(260px, calc(100vh - 240px));
   }
   .island-panel {
     inset: auto 8px 8px;
@@ -580,6 +787,12 @@ kbd {
   .viewer-close { top: 10px; right: 10px; }
   .viewer-prev { left: 8px; }
   .viewer-next { right: 8px; }
+}
+
+@media (hover: none), (pointer: coarse), (max-width: 720px) {
+  .mobile-controls {
+    display: flex;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

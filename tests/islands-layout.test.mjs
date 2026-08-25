@@ -47,7 +47,7 @@ test('local fallback contains the four published islands and future inactive isl
 
   assert.deepEqual(
     active.map(island => island.name),
-    ['奥秘星球', '神州漫游岛', '思辨启航岛', '东方明珠岛'],
+    ['奥秘星球', '神州漫游岛', '思辨启航岛', '东方明珠岛', '墨流岛', '测量岛'],
   )
   assert.deepEqual(
     active.map(island => [island.builder, island.photos.length]),
@@ -56,6 +56,8 @@ test('local fallback contains the four published islands and future inactive isl
       ['钟昊恩', 3],
       ['王惠诚', 5],
       ['陈岂帆', 4],
+      ['陈宇泽', 0],
+      ['林伟宸', 0],
     ],
   )
   assert.equal(inactive.length, 12)
@@ -73,6 +75,6 @@ test('future inactive islands are appended to API-provided islands too', async (
     photos: [],
   }])
 
-  assert.equal(world.filter(island => island.projects.length > 0).length, 1)
+  assert.equal(world.filter(island => island.projects.length > 0).length, 3)
   assert.equal(world.filter(island => island.projects.length === 0).length, 12)
 })

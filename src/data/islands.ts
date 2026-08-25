@@ -45,6 +45,8 @@ const PROJECT_PREVIEWS: Record<string, string> = {
   '/scenic-map/': './work-previews/scenic-map.jpg',
   '/idea-pilot/': './work-previews/idea-pilot.jpg',
   '/oriental-pearl/': './work-previews/oriental-pearl.jpg',
+  '/suminagashi-demo/': './works/suminagashi-demo/preview.png',
+  '/measured-demo/': './works/measured-demo/preview.png',
 }
 
 export function projectPreviewFor(url: string): string | undefined {
@@ -140,6 +142,41 @@ const PUBLISHED_ISLAND_SNAPSHOT: IslandSource[] = [
   },
 ]
 
+const DEMO_ISLANDS: IslandSource[] = [
+  {
+    id: 'demo-island-yang-kongling',
+    name: '墨流岛',
+    builder: '陈宇泽',
+    description: '以墨流视觉实验作为作品入口，展示流动纹理与色彩扩散的节奏感。',
+    theme: 'forest',
+    projects: [
+      {
+        id: 'demo-project-suminagashi',
+        name: '墨流 Suminagashi',
+        url: 'https://island.fmlab.vip/works/suminagashi-demo/',
+        cover: projectPreviewFor('https://island.fmlab.vip/works/suminagashi-demo/'),
+      },
+    ],
+    photos: [],
+  },
+  {
+    id: 'demo-island-zhong-haoen',
+    name: '测量岛',
+    builder: '林伟宸',
+    description: '聚焦视觉构图与版式测量，让页面结构和留白关系一眼可见。',
+    theme: 'snow',
+    projects: [
+      {
+        id: 'demo-project-measured',
+        name: 'Measured 视觉首页',
+        url: 'https://island.fmlab.vip/works/measured-demo/',
+        cover: projectPreviewFor('https://island.fmlab.vip/works/measured-demo/'),
+      },
+    ],
+    photos: [],
+  },
+]
+
 const FUTURE_ISLAND_COUNT = 12
 const THEMES: IslandSource['theme'][] = ['forest', 'volcano', 'snow']
 const FUTURE_ISLANDS: IslandSource[] = Array.from({ length: FUTURE_ISLAND_COUNT }, (_, index) => ({
@@ -183,9 +220,10 @@ export function layoutIslands(sources: IslandSource[]): IslandDef[] {
 }
 
 export function layoutIslandWorld(publishedSources: IslandSource[]): IslandDef[] {
-  const publishedIds = new Set(publishedSources.map(source => source.id))
-  const futureSources = FUTURE_ISLANDS.filter(source => !publishedIds.has(source.id))
-  return layoutIslands([...publishedSources, ...futureSources])
+  const activeSources = [...publishedSources, ...DEMO_ISLANDS]
+  const activeIds = new Set(activeSources.map(source => source.id))
+  const futureSources = FUTURE_ISLANDS.filter(source => !activeIds.has(source.id))
+  return layoutIslands([...activeSources, ...futureSources])
 }
 
 export const LOCAL_FALLBACK_ISLANDS = layoutIslandWorld(PUBLISHED_ISLAND_SNAPSHOT)
