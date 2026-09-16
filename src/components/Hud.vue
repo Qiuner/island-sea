@@ -23,6 +23,9 @@ function skipTime() {
 function openAdmin() {
   window.location.href = adminUrl
 }
+function openProjects() {
+  window.location.href = '/projects'
+}
 </script>
 
 <template>
@@ -35,6 +38,10 @@ function openAdmin() {
       </div>
       <div class="wordmark">造物群岛<span>每个孩子都是一座岛</span></div>
       <div class="hud-actions">
+        <button class="hud-card hud-button admin-entry" @click="openProjects">
+          <span class="card-kicker">快速浏览</span>
+          <span class="card-row"><strong>项目总览</strong></span>
+        </button>
         <button class="hud-card hud-button time-card" @click="skipTime" title="时间随现实自然流转 · 点击跳到下一个时段">
           <span class="card-kicker">当前天色</span>
           <span class="card-row">
