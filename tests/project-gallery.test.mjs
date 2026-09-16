@@ -15,6 +15,10 @@ test('project archive is available without loading the 3D world', () => {
 test('project archive flattens island projects and keeps island as presentation metadata', () => {
   assert.match(gallerySource, /islands\.flatMap\(island => island\.projects\.map/)
   assert.match(gallerySource, /islandName: island\.name/)
+  assert.match(gallerySource, /photos: island\.photos/)
+  assert.match(gallerySource, /小岛介绍/)
+  assert.match(gallerySource, /造物时刻/)
+  assert.match(gallerySource, /v-for="photo in selected\.photos"/)
   assert.match(gallerySource, /进入小岛/)
   assert.match(gallerySource, /打开项目/)
   assert.match(gallerySource, /image\?\.startsWith\('\.\/'\)/)

@@ -11,14 +11,14 @@ import {
   X,
 } from '@lucide/vue'
 import { fetchPublishedIslands } from '../api/islands'
-import type { IslandDef, ProjectRef } from '../data/islands'
+import type { IslandDef, IslandPhotoRef, ProjectRef } from '../data/islands'
 
 interface GalleryProject extends ProjectRef {
   islandId: string
   islandName: string
   builder: string
   description: string
-  photo?: string
+  photos: IslandPhotoRef[]
 }
 
 const loading = ref(true)
@@ -46,13 +46,16 @@ function flattenProjects(islands: IslandDef[]): GalleryProject[] {
     islandName: island.name,
     builder: island.builder,
     description: island.description || `${island.builder}在造物群岛中的创作项目。`,
-    photo: island.photos[0]?.url,
+    photos: island.photos,
   })))
 }
 
-function projectImage(project: GalleryProject): string | undefined {
-  const image = project.cover || project.photo
+function imageUrl(image?: string): string | undefined {
   return image?.startsWith('./') ? `/${image.slice(2)}` : image
+}
+
+function projectImage(project: GalleryProject): string | undefined {
+  return imageUrl(project.cover || project.photos[0]?.url)
 }
 
 function openProject(project: GalleryProject) {
@@ -169,7 +172,22 @@ onMounted(async () => {
           <div class="detail-copy">
             <p class="eyebrow">{{ selected.builder }} · {{ selected.islandName }}</p>
             <h2>{{ selected.name }}</h2>
-            <p>{{ selected.description }}</p>
+            <section class="island-intro" aria-labelledby="island-intro-title">
+              <h3 id="island-intro-title">小岛介绍</h3>
+              <p>{{ selected.description }}</p>
+            </section>
+            <section v-if="selected.photos.length" class="island-moments" aria-labelledby="island-moments-title">
+              <div class="detail-section-heading">
+                <h3 id="island-moments-title">造物时刻</h3>
+                <span>{{ selected.photos.length }}</span>
+              </div>
+              <div class="moment-strip">
+                <figure v-for="photo in selected.photos" :key="photo.id">
+                  <img :src="imageUrl(photo.url)" :alt="photo.alt" loading="lazy" decoding="async" />
+                  <figcaption v-if="photo.caption">{{ photo.caption }}</figcaption>
+                </figure>
+              </div>
+            </section>
             <div class="detail-actions">
               <button class="primary-action" type="button" @click="openProject(selected)">
                 打开项目 <ArrowUpRight :size="17" />
@@ -489,6 +507,8 @@ a { -webkit-tap-highlight-color: transparent; }
 
 .detail-copy {
   padding: 68px 38px 38px;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -501,11 +521,74 @@ a { -webkit-tap-highlight-color: transparent; }
   line-height: 1.2;
 }
 
-.detail-copy > p:not(.eyebrow) {
+.island-intro h3,
+.detail-section-heading h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.island-intro p {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
   line-height: 1.9;
+}
+
+.island-intro h3 { margin-bottom: 8px; }
+
+.island-moments {
+  margin-top: 24px;
+}
+
+.detail-section-heading {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-section-heading span {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.moment-strip {
+  margin-right: -38px;
+  padding-right: 38px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scroll-snap-type: x proximity;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 116px;
+  gap: 8px;
+}
+
+.moment-strip figure {
+  margin: 0;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.moment-strip img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
+}
+
+.moment-strip figcaption {
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-actions {
@@ -602,8 +685,16 @@ a { -webkit-tap-highlight-color: transparent; }
     grid-template-columns: 1fr;
   }
   .detail-media { min-height: 0; aspect-ratio: 16 / 10; }
-  .detail-copy { padding: 28px 22px 24px; }
+  .detail-copy {
+    padding: 28px 22px 24px;
+    overflow: visible;
+  }
   .detail-copy h2 { padding-right: 36px; font-size: 27px; }
+  .moment-strip {
+    margin-right: -22px;
+    padding-right: 22px;
+    grid-auto-columns: min(42vw, 150px);
+  }
   .detail-actions { flex-direction: column; }
 }
 
