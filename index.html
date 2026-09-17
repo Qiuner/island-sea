@@ -4,6 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>造物群岛 · 每个孩子都是一座岛</title>
+  <script>
+    if (/^\/projects\/?$/.test(window.location.pathname)) {
+      document.documentElement.classList.add('project-gallery-route')
+    }
+  </script>
   <style>
     :root {
       --loading-ink: #f8f2e7;
@@ -15,6 +20,9 @@
     /* 防首帧闪色：底色 = 泻湖海色 */
     html, body { margin: 0; padding: 0; background: #1a9db4; }
     body { overflow: hidden; }
+    html.project-gallery-route,
+    html.project-gallery-route body { background: #fafbf9; }
+    html.project-gallery-route #loading { display: none; }
     #loading {
       position: fixed; inset: 0; z-index: 99;
       color: var(--loading-ink);

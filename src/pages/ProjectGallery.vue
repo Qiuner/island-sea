@@ -28,6 +28,7 @@ const view = ref<'grid' | 'focus'>('grid')
 const selected = ref<GalleryProject | null>(null)
 const projects = ref<GalleryProject[]>([])
 const gallery = ref<HTMLElement | null>(null)
+const projectsRequest = fetchPublishedIslands().then(flattenProjects)
 
 const filteredProjects = computed(() => {
   const keyword = query.value.trim().toLocaleLowerCase('zh-CN')
@@ -75,7 +76,7 @@ async function setView(nextView: 'grid' | 'focus') {
 onMounted(async () => {
   document.title = '项目总览 · 造物群岛'
   try {
-    projects.value = flattenProjects(await fetchPublishedIslands())
+    projects.value = await projectsRequest
   } catch (error) {
     failed.value = true
     console.error('[island-sea] 项目总览加载失败：', error)
@@ -121,7 +122,13 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section v-if="loading" class="project-state">正在整理项目档案...</section>
+    <section v-if="loading" class="project-gallery is-grid project-gallery-skeleton" aria-label="正在加载项目">
+      <article v-for="index in 4" :key="index" class="project-card" aria-hidden="true">
+        <div class="project-media"></div>
+        <div class="skeleton-title"></div>
+        <div class="skeleton-meta"></div>
+      </article>
+    </section>
     <section v-else-if="failed" class="project-state">
       <strong>项目档案暂时没有加载成功</strong>
       <a href="/projects">重新加载</a>
@@ -152,7 +159,8 @@ onMounted(async () => {
             v-if="projectImage(project)"
             :src="projectImage(project)"
             :alt="`${project.name}项目画面`"
-            loading="lazy"
+            :loading="index === 0 ? 'eager' : 'lazy'"
+            :fetchpriority="index === 0 ? 'high' : 'auto'"
             decoding="async"
           />
           <div v-else class="project-placeholder"><ImageIcon :size="34" /></div>
@@ -387,6 +395,8 @@ a { -webkit-tap-highlight-color: transparent; }
   border: 0;
   outline: 0;
   cursor: pointer;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
 }
 
 .project-card:focus-visible .project-media {
@@ -441,6 +451,32 @@ a { -webkit-tap-highlight-color: transparent; }
 }
 
 .project-card-copy { padding: 11px 1px 0; }
+
+.project-gallery-skeleton .project-card { pointer-events: none; }
+
+.project-gallery-skeleton .project-media,
+.skeleton-title,
+.skeleton-meta {
+  background: #e5e9e6;
+}
+
+.skeleton-title,
+.skeleton-meta {
+  height: 11px;
+  border-radius: 2px;
+}
+
+.skeleton-title {
+  width: 62%;
+  margin-top: 14px;
+}
+
+.skeleton-meta {
+  width: 28%;
+  height: 8px;
+  margin-top: 8px;
+  opacity: 0.72;
+}
 
 .project-card-copy p {
   margin: 4px 0 0;

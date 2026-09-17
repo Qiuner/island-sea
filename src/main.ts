@@ -1,5 +1,4 @@
 import { createApp } from 'vue'
-import './style.css'
 
 const isProjectGallery = /^\/projects\/?$/.test(window.location.pathname)
 
@@ -10,7 +9,10 @@ if (isProjectGallery) {
     createApp(ProjectGallery).mount('#app')
   })
 } else {
-  import('./App.vue').then(({ default: App }) => {
+  Promise.all([
+    import('./style.css'),
+    import('./App.vue'),
+  ]).then(([, { default: App }]) => {
     createApp(App).mount('#app')
   })
 }
