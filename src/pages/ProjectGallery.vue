@@ -148,7 +148,13 @@ onMounted(async () => {
         @keydown.space.prevent="selected = project"
       >
         <div class="project-media">
-          <img v-if="projectImage(project)" :src="projectImage(project)" :alt="`${project.name}项目画面`" />
+          <img
+            v-if="projectImage(project)"
+            :src="projectImage(project)"
+            :alt="`${project.name}项目画面`"
+            loading="lazy"
+            decoding="async"
+          />
           <div v-else class="project-placeholder"><ImageIcon :size="34" /></div>
           <span class="project-index">{{ String(index + 1).padStart(2, '0') }}</span>
         </div>

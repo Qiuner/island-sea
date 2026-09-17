@@ -28,6 +28,7 @@ test('project archive provides compact and immersive responsive views', () => {
   assert.match(gallerySource, /view === 'grid'/)
   assert.match(gallerySource, /view === 'focus'/)
   assert.match(gallerySource, /project-gallery\.is-focus/)
+  assert.match(gallerySource, /loading="lazy"/)
   assert.match(gallerySource, /@media \(max-width: 680px\)/)
   assert.match(gallerySource, /<h1>项目集<\/h1>/)
   assert.doesNotMatch(gallerySource, /从项目开始，看见每一座小岛/)
