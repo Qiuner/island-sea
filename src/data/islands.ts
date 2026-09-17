@@ -41,12 +41,12 @@ function localPhoto(
 }
 
 const PROJECT_PREVIEWS: Record<string, string> = {
-  '/planet-party/': './work-previews/planet-party.jpg',
-  '/scenic-map/': './work-previews/scenic-map.jpg',
-  '/idea-pilot/': './work-previews/idea-pilot.jpg',
-  '/oriental-pearl/': './work-previews/oriental-pearl.jpg',
-  '/suminagashi-demo/': './works/suminagashi-demo/preview.png',
-  '/measured-demo/': './works/measured-demo/preview.png',
+  '/planet-party/': './work-previews/planet-party.webp',
+  '/scenic-map/': './work-previews/scenic-map.webp',
+  '/idea-pilot/': './work-previews/idea-pilot.webp',
+  '/oriental-pearl/': './work-previews/oriental-pearl.webp',
+  '/suminagashi-demo/': './works/suminagashi-demo/preview.webp',
+  '/measured-demo/': './works/measured-demo/preview.webp',
 }
 
 export function projectPreviewFor(url: string): string | undefined {
